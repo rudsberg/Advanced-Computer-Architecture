@@ -8,22 +8,16 @@
 import Foundation
 
 struct RenameAndDispatchUnit {
-    /// Num instructions that the active list and integer queue can maximally handle
-    private var maxInstructionsRetrievable: Int {
-        let capacity = 32
-        return min(capacity - state.ActiveList.count, capacity - state.IntegerQueue.count)
-    }
-    
     func backPresssure(state: State) -> Bool {
         // TODO: unsure, "check if there are enough physical registers", always enough with 64?
-        maxInstructionsRetrievable == 0
+        maxInstructionsRetrievable(state: state) == 0
     }
     
     func renameAndDispatch(state: State, program: [Instruction]) {
         guard !backPresssure(state: state) else { return }
         
         // Retrive max amount of instructions
-        let numToRetrive = min(maxInstructionsRetrievable, min(4, state.DecodedPCs.count))
+        let numToRetrive = min(maxInstructionsRetrievable(state: state), min(4, state.DecodedPCs.count))
         let instructions = Array(state.DecodedPCs.prefix(upTo: numToRetrive)).map { decodedPC in
             program.first(where: { $0.pc == decodedPC })!
         }
@@ -66,6 +60,12 @@ struct RenameAndDispatchUnit {
             state.IntegerQueue.append(rsItem)
         }
         // TODO: "Observe the results of all functional units through the forwarding paths and update the physical register file as well as the Busy Bit Table." have I handled this?
+    }
+    
+    /// Num instructions that the active list and integer queue can maximally handle
+    private func maxInstructionsRetrievable(state: State) -> Int {
+        let capacity = 32
+        return min(capacity - state.ActiveList.count, capacity - state.IntegerQueue.count)
     }
     
     private func value(forOp operand: Register, state: State) -> Int? {

@@ -7,19 +7,21 @@ final class Mips10000Tests: XCTestCase {
     private var testProgram: [Instruction] {
         try! Parser().parseInstructions(fromFile: "test.json")
     }
+    private var trueState: [State] {
+        try! fileIO.read([State].self, documentName: "test_result.json")
+    }
     
     func testStartupState() throws {
         // Write initial state
         let initialState = State()
         try Logger().updateLog(with: initialState, documentName: "test_startup_state.json", deleteExistingFile: true)
         
-        // Load 'true' state
-        let trueState = try fileIO.read([State].self, documentName: "test_result.json").first!
-        
-        checkState(state: initialState, comparedTo: trueState)
+        let trueInitialState = trueState.first!
+    
+        checkState(state: initialState, comparedTo: trueInitialState)
     }
     
-    func testFetchAndDecodeUnit() {
+    func testFetchAndDecodeUnit() throws {
         let fad = FetchAndDecodeUnit()
         var state = State()
         state.programMemory = testProgram
@@ -48,6 +50,15 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertEqual(state.DecodedPCs, [0, 1, 2, 3, 4])
         XCTAssertEqual(state.programMemory, [])
         XCTAssertEqual(state.PC, 5)
+    }
+    
+    func testTestProgram() throws {
+        let config = RunConfig(numCyclesToRun: 1, callbackEachCycle: { (cycle, state) in
+            let oracle = self.trueState[cycle]
+            print("Verifying state cycle \(cycle)...")
+            self.checkState(state: state, comparedTo: oracle)
+        })
+        try App(config: config).run()
     }
     
     private func checkState(state: State, comparedTo trueState: State) {
