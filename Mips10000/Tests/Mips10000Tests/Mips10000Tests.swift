@@ -11,7 +11,7 @@ final class Mips10000Tests: XCTestCase {
         try Logger().updateLog(with: initialState, documentName: "test_startup_state.json", deleteExistingFile: true)
         
         // Load 'true' state
-        let trueState = try fileIO.read([State].self, documentName: "test.json").first!
+        let trueState = try fileIO.read([State].self, documentName: "test_result.json").first!
         
         checkState(state: initialState, comparedTo: trueState)
     }
@@ -19,13 +19,14 @@ final class Mips10000Tests: XCTestCase {
     private func checkState(state: State, comparedTo trueState: State) {
         XCTAssertEqual(state.PC, trueState.PC)
         XCTAssertEqual(state.ExceptionPC, trueState.ExceptionPC)
-//        XCTAssertEqual(state.ActiveList, trueState.PC)
-//        XCTAssertEqual(state.PC, trueState.PC)
-//        XCTAssertEqual(state.PC, trueState.PC)
-//        XCTAssertEqual(state.PC, trueState.PC)
-//        XCTAssertEqual(state.PC, trueState.PC)
-//        XCTAssertEqual(state.PC, trueState.PC)
-
+        zip(state.ActiveList, trueState.ActiveList).forEach { XCTAssertEqual($0.0, $0.1) }
+        XCTAssertEqual(state.BusyBitTable, trueState.BusyBitTable)
+        XCTAssertEqual(state.DecodedPCs, trueState.DecodedPCs)
+        XCTAssertEqual(state.Exception, trueState.Exception)
+        XCTAssertEqual(state.FreeList, trueState.FreeList)
+        zip(state.IntegerQueue, trueState.IntegerQueue).forEach { XCTAssertEqual($0.0, $0.1) }
+        XCTAssertEqual(state.RegisterMapTable, trueState.RegisterMapTable)
+        XCTAssertEqual(state.PhysicalRegisterFile, trueState.PhysicalRegisterFile)
     }
 
     /// Returns path to the built products directory.

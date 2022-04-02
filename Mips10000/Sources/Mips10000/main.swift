@@ -9,8 +9,8 @@ program.forEach({ print($0) })
 let state = State()
 try Logger().updateLog(with: state, documentName: "log.json", deleteExistingFile: true)
 
-state.PC = 1
-try Logger().updateLog(with: state, documentName: "log.json")
+//state.PC = 1
+//try Logger().updateLog(with: state, documentName: "log.json")
 
 //let url = Bundle.main.path(forResource: "please_work", ofType: "json")!
 //try "hej".write(toFile: url, atomically: true, encoding: .utf8)

@@ -62,7 +62,7 @@ class State: Codable {
     }
 }
 
-struct ActiveListItem: Codable {
+struct ActiveListItem: Codable, Equatable {
     var Done: Bool
     var Exception: Bool
     var LogicalDestination: Int
@@ -70,7 +70,7 @@ struct ActiveListItem: Codable {
     var PC: Int
 }
 
-struct IntegerQueueItem: Codable {
+struct IntegerQueueItem: Codable, Equatable {
     var DestRegister: Int
     var OpAIsReady: Bool
     var OpARegTag: Int
