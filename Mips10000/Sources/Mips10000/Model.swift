@@ -42,9 +42,6 @@ enum InstructionType {
 }
 
 class State: Codable {
-    private init() {}
-    static let shared = State()
-    
     var PC = 0
     var PhysicalRegisterFile = [Int](repeating: 0, count: 64)
     var DecodedPCs = [Int]()
