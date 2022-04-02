@@ -53,7 +53,8 @@ final class Mips10000Tests: XCTestCase {
     }
     
     func testTestProgram() throws {
-        let config = RunConfig(numCyclesToRun: 1, callbackEachCycle: { (cycle, state) in
+        // TODO: doesn't seem to run this
+        let config = RunConfig(numCyclesToRun: 2, callbackEachCycle: { (cycle, state) in
             let oracle = self.trueState[cycle]
             print("Verifying state cycle \(cycle)...")
             self.checkState(state: state, comparedTo: oracle)

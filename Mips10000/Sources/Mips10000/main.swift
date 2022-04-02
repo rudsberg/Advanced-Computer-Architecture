@@ -2,14 +2,14 @@ import Foundation
 
 struct RunConfig {
     typealias Cycle = Int
-    let numCyclesToRun: Cycle
+    var numCyclesToRun: Cycle? = nil
     var callbackEachCycle: ((Cycle, State) -> Void)? = nil
 }
 
 struct App {
     let config: RunConfig
     
-    func run(config: RunConfig? = nil) throws {
+    func run() throws {
         let logFile = "log.json"
         // 0. parse JSON to get the program
         let program = try Parser().parseInstructions(fromFile: "test.json")
@@ -23,11 +23,14 @@ struct App {
 
         // Setup units
         let fetchAndDecodeUnit = FetchAndDecodeUnit()
+        // Cycle 0 to 1 before loop
+        fetchAndDecodeUnit.fetchAndDecode(state: state, backPressure: false)
         let renameAndDispatchUnit = RenameAndDispatchUnit()
 
         // 2. the loop for cycle-by-cycle iterations.
-        var cycleCounter = 0
-        while (!(state.programMemory.isEmpty && state.ActiveList.isEmpty) || !(config != nil && config!.numCyclesToRun == cycleCounter)) {
+        var cycleCounter = 1
+        while (!(state.programMemory.isEmpty && state.ActiveList.isEmpty) && (config.numCyclesToRun != nil && cycleCounter < config.numCyclesToRun!)) {
+            print("Starting cycle \(cycleCounter)")
             // Propagate
             fetchAndDecodeUnit.fetchAndDecode(
                 state: state,
@@ -38,12 +41,16 @@ struct App {
             // TODO: latch
             
             // Dump the state
-            try Logger().updateLog(with: state, documentName: logFile)
+            // TODO: log file too large!
+//            try Logger().updateLog(with: state, documentName: logFile)
             
             // For debugging purposes
-            if config != nil {
-                cycleCounter += 1
-                config?.callbackEachCycle?(cycleCounter, state)
+            cycleCounter += 1
+            config.callbackEachCycle?(cycleCounter, state)
+            
+            // TODO: remove for final submission
+            if (cycleCounter >= 100) {
+                fatalError("Stuck in while loop")
             }
         }
         // while(not (noInstruction() and activeListIsEmpty())){
@@ -60,5 +67,7 @@ struct App {
     }
 }
 
-let config = RunConfig(numCyclesToRun: 1, callbackEachCycle: nil)
+let config = RunConfig(numCyclesToRun: 2, callbackEachCycle: nil)
 try App(config: config).run()
+
+print("done")
