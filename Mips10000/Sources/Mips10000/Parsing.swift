@@ -19,24 +19,9 @@ public struct Parser {
             let parts = Array(i.replacingOccurrences(of: ",", with: "").replacingOccurrences(of: "x", with: "").split(separator: " "))
             print(parts)
             return (String(parts[0]), Int(parts[1])!, Int(parts[2])!, Int(parts[3])!)
-        }.map { (type, dest, arg1, arg2) in
+        }.map { (type, dest, opA, opB) in
             pc += 1
-            switch (type) {
-            case "add":
-                return Instruction(address: pc, type: .add(dest, arg1, arg2))
-            case "addi":
-                return Instruction(address: pc, type: .addi(dest, arg1, arg2))
-            case "sub":
-                return Instruction(address: pc, type: .sub(dest, arg1, arg2))
-            case "mulu":
-                return Instruction(address: pc, type: .mulu(dest, arg1, arg2))
-            case "divu":
-                return Instruction(address: pc, type: .divu(dest, arg1, arg2))
-            case "remu":
-                return Instruction(address: pc, type: .remu(dest, arg1, arg2))
-            default:
-                fatalError("Non-supported instruction")
-            }
+            return Instruction(pc: pc, dest: dest, opA: opA, opB: opB, type: .init(rawValue: type)!)
         }
     }
     

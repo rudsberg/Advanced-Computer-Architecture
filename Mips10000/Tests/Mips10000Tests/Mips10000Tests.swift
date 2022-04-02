@@ -36,7 +36,7 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertEqual(state.PC, 4)
         
         // Test with one more instruction (5)
-        let fifthInstruction = Instruction(address: 4, type: .add(0, 1, 2))
+        let fifthInstruction = Instruction(pc: 4, dest: 0, opA: 1, opB: 2, type: .add)
         state = State()
         state.programMemory = testProgram + [fifthInstruction]
         fad.fetchAndDecode(state: state, backPressure: false)

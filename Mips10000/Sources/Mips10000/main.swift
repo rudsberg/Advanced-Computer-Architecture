@@ -1,28 +1,5 @@
 import Foundation
 
-struct FetchAndDecodeUnit {
-    func fetchAndDecode(state: State, backPressure: Bool) {
-        guard !backPressure else { return }
-        
-        // Fetch up to 4 instructions from program memory
-        let numToFetch = state.programMemory.count > 4 ? 4 : state.programMemory.count
-        let fetched = state.programMemory.prefix(upTo: numToFetch)
-        state.programMemory = Array(state.programMemory.dropFirst(numToFetch))
-        
-        // Pass fetched instructions to Rename and Dispatch stage
-        state.DecodedPCs = state.DecodedPCs + fetched.map { $0.address }
-        
-        // Update PC
-        state.PC += fetched.count
-    }
-}
-
-struct RenameAndDispatchUnit {
-    func backPresssure(state: State) -> Bool {
-        false // TODO:
-    }
-}
-
 // 0. parse JSON to get the program
 let program = try Parser().parseInstructions(fromFile: "test.json")
 print("======= Program =======")
@@ -44,7 +21,7 @@ while (!(state.programMemory.isEmpty && state.ActiveList.isEmpty)) {
         state: state,
         backPressure: renameAndDispatchUnit.backPresssure(state: state)
     )
-    
+    renameAndDispatchUnit.renameAndDispatch(state: state, program: program)
 }
 // while(not (noInstruction() and activeListIsEmpty())){
     // do propagation

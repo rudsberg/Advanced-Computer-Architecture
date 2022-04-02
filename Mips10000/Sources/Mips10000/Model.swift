@@ -8,48 +8,39 @@
 import Foundation
 
 typealias Register = Int
+typealias RegisterOrImmediate = Int
 typealias PC = Int
 
 struct Instruction: Equatable {
-    let address: Int
+    let pc: Int
+    let dest: Register
+    let opA: Register
+    /// Immediate value for addi, register for rest
+    let opB: RegisterOrImmediate
     let type: InstructionType
 }
 
-enum InstructionType: Equatable {
-    case add(Register, Register, Register)
-    case addi(Register, Register, Int)
-    case sub(Register, Register, Register)
-    case mulu(Register, Register, Register)
-    case divu(Register, Register, Register)
-    case remu(Register, Register, Register)
-    
-    var description: String {
-        switch self {
-        case .add(_, _, _):
-            return "add"
-        case .addi(_, _, _):
-            return "addi"
-        case .sub(_, _, _):
-            return "sub"
-        case .mulu(_, _, _):
-            return "mulu"
-        case .divu(_, _, _):
-            return "divu"
-        case .remu(_, _, _):
-            return "remu"
-        }
-    }
+enum InstructionType: String, Equatable {
+    case add
+    case addi
+    case sub
+    case mulu
+    case divu
+    case remu
 }
 
 class State: Codable {
-    // The remaining program to execute
+    /// Remaining program to execute
     var programMemory = [Instruction]()
+    var forwardingPaths = [ForwardingPath]()
     var PC = 0
     var PhysicalRegisterFile = [Int](repeating: 0, count: 64)
     var DecodedPCs = [Int]()
     var ExceptionPC = 0
     var Exception = false
+    /// Logical --> Physical
     var RegisterMapTable = Array(0...31)
+    /// FIFO, head beginning of array and tail end of array
     var FreeList = Array(32...63)
     var BusyBitTable = [Bool](repeating: false, count: 64)
     var ActiveList = [ActiveListItem]() {
@@ -57,6 +48,7 @@ class State: Codable {
             assert(ActiveList.count <= 32)
         }
     }
+    /// Reservation Station
     var IntegerQueue = [IntegerQueueItem]() {
         didSet {
             assert(IntegerQueue.count <= 32)
@@ -79,8 +71,8 @@ class State: Codable {
 }
 
 struct ActiveListItem: Codable, Equatable {
-    var Done: Bool
-    var Exception: Bool
+    var Done = false
+    var Exception = false
     var LogicalDestination: Int
     var OldDestination: Int
     var PC: Int
@@ -95,4 +87,16 @@ struct IntegerQueueItem: Codable, Equatable {
     var OpBRegTag: Int
     var OpBValue: Int
     var OpCode: String
+    var PC: Int
+}
+
+struct ForwardingPath {
+    let dest: Int
+    let value: Int
+}
+
+extension Sequence where Element == ForwardingPath {
+    func contains(valueForRegister register: Register) -> Bool {
+        contains(where: { $0.dest == register })
+    }
 }
