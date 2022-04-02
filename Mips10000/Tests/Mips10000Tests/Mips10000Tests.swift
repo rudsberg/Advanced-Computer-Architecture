@@ -4,6 +4,9 @@ import class Foundation.Bundle
 
 final class Mips10000Tests: XCTestCase {
     private let fileIO = FileIOController()
+    private var testProgram: [Instruction] {
+        try! Parser().parseInstructions(fromFile: "test.json")
+    }
     
     func testStartupState() throws {
         // Write initial state
@@ -14,6 +17,37 @@ final class Mips10000Tests: XCTestCase {
         let trueState = try fileIO.read([State].self, documentName: "test_result.json").first!
         
         checkState(state: initialState, comparedTo: trueState)
+    }
+    
+    func testFetchAndDecodeUnit() {
+        let fad = FetchAndDecodeUnit()
+        var state = State()
+        state.programMemory = testProgram
+        
+        // Fetch&Decode regular test program
+        fad.fetchAndDecode(state: state, backPressure: true)
+        XCTAssertEqual(state.DecodedPCs, [])
+        XCTAssertEqual(state.programMemory, testProgram)
+        XCTAssertEqual(state.PC, 0)
+        
+        fad.fetchAndDecode(state: state, backPressure: false)
+        XCTAssertEqual(state.DecodedPCs, [0, 1, 2, 3])
+        XCTAssertEqual(state.programMemory, [])
+        XCTAssertEqual(state.PC, 4)
+        
+        // Test with one more instruction (5)
+        let fifthInstruction = Instruction(address: 4, type: .add(0, 1, 2))
+        state = State()
+        state.programMemory = testProgram + [fifthInstruction]
+        fad.fetchAndDecode(state: state, backPressure: false)
+        XCTAssertEqual(state.DecodedPCs, [0, 1, 2, 3])
+        XCTAssertEqual(state.programMemory, [fifthInstruction])
+        XCTAssertEqual(state.PC, 4)
+        
+        fad.fetchAndDecode(state: state, backPressure: false)
+        XCTAssertEqual(state.DecodedPCs, [0, 1, 2, 3, 4])
+        XCTAssertEqual(state.programMemory, [])
+        XCTAssertEqual(state.PC, 5)
     }
     
     private func checkState(state: State, comparedTo trueState: State) {

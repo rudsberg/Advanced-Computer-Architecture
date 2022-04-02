@@ -10,12 +10,12 @@ import Foundation
 typealias Register = Int
 typealias PC = Int
 
-struct Instruction {
+struct Instruction: Equatable {
     let address: Int
     let type: InstructionType
 }
 
-enum InstructionType {
+enum InstructionType: Equatable {
     case add(Register, Register, Register)
     case addi(Register, Register, Int)
     case sub(Register, Register, Register)
@@ -42,6 +42,8 @@ enum InstructionType {
 }
 
 class State: Codable {
+    // The remaining program to execute
+    var programMemory = [Instruction]()
     var PC = 0
     var PhysicalRegisterFile = [Int](repeating: 0, count: 64)
     var DecodedPCs = [Int]()
@@ -59,6 +61,20 @@ class State: Codable {
         didSet {
             assert(IntegerQueue.count <= 32)
         }
+    }
+    
+    // Encode/decode all but program memory
+    enum CodingKeys: String, CodingKey {
+        case PC
+        case PhysicalRegisterFile
+        case DecodedPCs
+        case ExceptionPC
+        case Exception
+        case RegisterMapTable
+        case FreeList
+        case BusyBitTable
+        case ActiveList
+        case IntegerQueue
     }
 }
 
