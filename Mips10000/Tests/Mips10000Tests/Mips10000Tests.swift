@@ -67,18 +67,27 @@ final class Mips10000Tests: XCTestCase {
         let producedStates = try fileIO.read([State].self, documentName: log)
         
         // TODO: when all steps implemented XCTAssertEqual(producedStates.count, trueState.count)
-        zip(producedStates, trueState).forEach { checkState(state: $0, comparedTo: $1) }
+        var cycle = 0
+        zip(producedStates, trueState).forEach {
+            checkState(state: $0, comparedTo: $1, cycle: cycle)
+            cycle += 1
+        }
     }
     
-    private func checkState(state: State, comparedTo trueState: State) {
+    private func checkState(state: State, comparedTo trueState: State, cycle: Int? = nil) {
+        if let cycle = cycle {
+            print("----------- Verifying cycle \(cycle)")
+        }
         XCTAssertEqual(state.PC, trueState.PC)
         XCTAssertEqual(state.ExceptionPC, trueState.ExceptionPC)
         zip(state.ActiveList, trueState.ActiveList).forEach { XCTAssertEqual($0.0, $0.1) }
+        XCTAssertEqual(state.ActiveList.count, trueState.ActiveList.count)
         XCTAssertEqual(state.BusyBitTable, trueState.BusyBitTable)
         XCTAssertEqual(state.DecodedPCs, trueState.DecodedPCs)
         XCTAssertEqual(state.Exception, trueState.Exception)
         XCTAssertEqual(state.FreeList, trueState.FreeList)
         zip(state.IntegerQueue, trueState.IntegerQueue).forEach { XCTAssertEqual($0.0, $0.1) }
+        XCTAssertEqual(state.IntegerQueue.count, trueState.IntegerQueue.count)
         XCTAssertEqual(state.RegisterMapTable, trueState.RegisterMapTable)
         XCTAssertEqual(state.PhysicalRegisterFile, trueState.PhysicalRegisterFile)
     }

@@ -28,8 +28,8 @@ struct App {
         let renameAndDispatchUnit = RenameAndDispatchUnit()
 
         // 2. the loop for cycle-by-cycle iterations.
-        var cycleCounter = 0
-        while (true /* Quits prematurely, need one more cycle !(state.programMemory.isEmpty && state.ActiveList.isEmpty) */ ) {
+        var cycleCounter = 1
+        while (true /* TODO: Quits prematurely, need one more cycle !(state.programMemory.isEmpty && state.ActiveList.isEmpty) */ ) {
             if (config.runUpToCycle != nil && cycleCounter > config.runUpToCycle!) {
                 break
             }
@@ -38,7 +38,7 @@ struct App {
             // Make copy of current state which will be consumed & updated by units EXCEPT
             // those units that can access data structures that can be updated and read in the same
             // cycle -> Integer Queue, Active List, Free List
-            print("======= Starting cycle \(cycleCounter)")
+            print("\n======= Starting cycle \(cycleCounter)")
             // Unit READS old state, UPDATES real state
             let oldState = state
             let fadUpdates = fetchAndDecodeUnit.fetchAndDecode(
@@ -66,6 +66,7 @@ struct App {
             try Logger().updateLog(with: state, documentName: config.logFile)
             
             // For debugging purposes
+            print("======= Ending cycle \(cycleCounter)\n")
             cycleCounter += 1
             
             // TODO: remove for final submission
