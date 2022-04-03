@@ -6,8 +6,6 @@ struct RunConfig {
     var runUpToCycle: Cycle? = nil
 }
 
-typealias StateMutation = () -> State
-
 struct App {
     let config: RunConfig
     
@@ -26,6 +24,7 @@ struct App {
         // Setup units
         let fetchAndDecodeUnit = FetchAndDecodeUnit()
         let renameAndDispatchUnit = RenameAndDispatchUnit()
+        let issueUnit = IssueUnit()
 
         // 2. the loop for cycle-by-cycle iterations.
         var cycleCounter = 1
@@ -49,17 +48,22 @@ struct App {
                 state: oldState,
                 program: program
             )
-            state.IntegerQueue = radUpdates.IntegerQueue
+//            state.IntegerQueue = radUpdates.IntegerQueue TODO: double check current update logic with TA
             state.ActiveList = radUpdates.ActiveList
             state.FreeList = radUpdates.FreeList
-        
+            let iUpdates = issueUnit.issue(state: state)
+            
+            // TODO: supply issued instrctions into ALUs
+    
             
             // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
             state.programMemory = fadUpdates.programMemory
-            state.DecodedPCs = radUpdates.DecodedPCAction(fadUpdates.DecodedPCAction(state.DecodedPCs))
             state.PC = fadUpdates.PC
+            state.DecodedPCs = radUpdates.DecodedPCAction(fadUpdates.DecodedPCAction(state.DecodedPCs))
             state.RegisterMapTable = radUpdates.RegisterMapTable
             state.BusyBitTable = radUpdates.BusyBitTable
+            state.IntegerQueue = iUpdates.IntegerQueue
+            state.IntegerQueue.append(contentsOf: radUpdates.IntegerQueueItemsToAdd)
             
             // MARK: - Dump the state
             // TODO: log file too large!
@@ -88,7 +92,7 @@ struct App {
     }
 }
 
-let config = RunConfig(logFile: "output3.json", runUpToCycle: 2)
+let config = RunConfig(logFile: "output3.json", runUpToCycle: 3)
 try App(config: config).run()
 
 print("done")

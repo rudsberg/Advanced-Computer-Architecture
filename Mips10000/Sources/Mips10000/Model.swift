@@ -38,6 +38,8 @@ enum InstructionType: String, Equatable {
 }
 
 struct State: Codable {
+    /// Initial program
+    
     /// Remaining program to execute
     var programMemory = [Instruction]()
     var forwardingPaths = [ForwardingPath]()
@@ -107,4 +109,9 @@ extension Sequence where Element == ForwardingPath {
     func contains(valueForRegister register: Register) -> Bool {
         contains(where: { $0.dest == register })
     }
+}
+
+struct ALUItem {
+    var iq: IntegerQueueItem // TODO: perhaps not the cleanest, see later what fields acutally needed
+    var computedValue: Int? = nil
 }

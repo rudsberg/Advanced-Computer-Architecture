@@ -14,7 +14,7 @@ struct RenameAndDispatchUnit {
         var ActiveList: [ActiveListItem]
         var RegisterMapTable: [Int]
         var BusyBitTable: [Bool]
-        var IntegerQueue: [IntegerQueueItem]
+        var IntegerQueueItemsToAdd: [IntegerQueueItem]
     }
     
     func backPresssure(state: State) -> Bool {
@@ -31,7 +31,7 @@ struct RenameAndDispatchUnit {
                 ActiveList: state.ActiveList,
                 RegisterMapTable: state.RegisterMapTable,
                 BusyBitTable: state.BusyBitTable,
-                IntegerQueue: state.IntegerQueue
+                IntegerQueueItemsToAdd: []
             )
         }
         
@@ -46,6 +46,7 @@ struct RenameAndDispatchUnit {
         let decodedPCAction: ([Int]) -> [Int] = { Array($0.dropFirst(numToRetrive)) }
         
         // Rename up to 4 registers from DIR
+        var IntegerQueueItemsToAdd = [IntegerQueueItem]()
         instructions.forEach { i in
             // Get first free element in free list
             let physicalRegister = state.FreeList.first!
@@ -77,7 +78,7 @@ struct RenameAndDispatchUnit {
                 OpCode: i.type.rawValue,
                 PC: i.pc
             )
-            state.IntegerQueue.append(rsItem)
+            IntegerQueueItemsToAdd.append(rsItem)
         }
         // TODO: "Observe the results of all functional units through the forwarding paths and update the physical register file as well as the Busy Bit Table." have I handled this?
         
@@ -87,7 +88,7 @@ struct RenameAndDispatchUnit {
             ActiveList: state.ActiveList,
             RegisterMapTable: state.RegisterMapTable,
             BusyBitTable: state.BusyBitTable,
-            IntegerQueue: state.IntegerQueue
+            IntegerQueueItemsToAdd: IntegerQueueItemsToAdd
         )
     }
     
