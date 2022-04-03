@@ -13,6 +13,7 @@ struct FetchAndDecodeUnit {
         
         // Fetch up to 4 instructions from program memory
         let numToFetch = state.programMemory.count > 4 ? 4 : state.programMemory.count
+        print("F&D - Fetching \(numToFetch) instructions")
         let fetched = state.programMemory.prefix(upTo: numToFetch)
         state.programMemory = Array(state.programMemory.dropFirst(numToFetch))
         

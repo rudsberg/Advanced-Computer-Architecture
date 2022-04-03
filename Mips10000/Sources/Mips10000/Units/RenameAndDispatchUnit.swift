@@ -23,6 +23,7 @@ struct RenameAndDispatchUnit {
         }
         
         // Remove retrieved from DIR
+        print("R&D – Decoding \(numToRetrive) instructions")
         state.DecodedPCs = Array(state.DecodedPCs.dropFirst(numToRetrive))
         
         // Rename up to 4 registers from DIR

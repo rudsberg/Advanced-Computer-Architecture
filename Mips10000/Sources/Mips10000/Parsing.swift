@@ -15,9 +15,7 @@ public struct Parser {
         // Map strings to instructions
         var pc = -1 // TODO: not hexadeciamal?
         return instructionStrings.map { i -> (String, Int, Int, Int) in
-            print(i)
             let parts = Array(i.replacingOccurrences(of: ",", with: "").replacingOccurrences(of: "x", with: "").split(separator: " "))
-            print(parts)
             return (String(parts[0]), Int(parts[1])!, Int(parts[2])!, Int(parts[3])!)
         }.map { (type, dest, opA, opB) in
             pc += 1

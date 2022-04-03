@@ -38,4 +38,8 @@ struct FileIOController {
     func fileExist(documentName: String) -> Bool {
         FileManager.default.fileExists(atPath: folderURL.appendingPathComponent(documentName).path)
     }
+    
+    func deleteFile(documentName: String) throws {
+        try FileManager.default.removeItem(at: folderURL.appendingPathComponent(documentName))
+    }
 }
