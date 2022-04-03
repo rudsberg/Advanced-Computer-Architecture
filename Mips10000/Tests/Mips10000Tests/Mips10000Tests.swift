@@ -53,14 +53,16 @@ final class Mips10000Tests: XCTestCase {
     }
     
     func testTestProgram() throws {
-        // TODO: doesn't seem to run this
-//        let config = RunConfig(numCyclesToRun: 2, callbackEachCycle: { (cycle, state) in
-//            let oracle = self.trueState[cycle]
-//            print("Verifying state cycle \(cycle)...")
-//            self.checkState(state: state, comparedTo: oracle)
-//        })
-//        try App(config: config).run()
-//        waitForExpectations(timeout: 5, handler: nil)
+        // Run simulation
+        let log = "testTestProgram.json"
+        let config = RunConfig(logFile: log, numCyclesToRun: 2)
+        try App(config: config).run()
+        
+        // From log, retrieve [State] and compare it to oracle
+        let producedStates = try fileIO.read([State].self, documentName: log)
+        
+        // TODO: when all steps implemented XCTAssertEqual(producedStates.count, trueState.count)
+        zip(producedStates, trueState).forEach { checkState(state: $0, comparedTo: $1) }
     }
     
     private func checkState(state: State, comparedTo trueState: State) {

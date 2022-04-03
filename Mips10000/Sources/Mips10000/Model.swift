@@ -18,6 +18,10 @@ struct Instruction: Equatable {
     /// Immediate value for addi, register for rest
     let opB: RegisterOrImmediate
     let type: InstructionType
+    
+    var opBImmediateValue: Int? {
+        type.hasImmediateValue ? opB : nil
+    }
 }
 
 enum InstructionType: String, Equatable {
@@ -27,6 +31,10 @@ enum InstructionType: String, Equatable {
     case mulu
     case divu
     case remu
+    
+    var hasImmediateValue: Bool {
+        self == .addi
+    }
 }
 
 class State: Codable {

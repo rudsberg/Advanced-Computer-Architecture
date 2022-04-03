@@ -45,8 +45,8 @@ struct RenameAndDispatchUnit {
             state.BusyBitTable[physicalRegister] = true
             
             // Allocate entry in integer queue
-            let opAValue = value(forOp: i.opA, state: state)
-            let opBValue = value(forOp: i.opB, state: state)
+            let opAValue = value(forOp: i.opA, checkImmediateValueForInstruction: nil, state: state)
+            let opBValue = value(forOp: i.opB, checkImmediateValueForInstruction: i, state: state)
             let rsItem = IntegerQueueItem(
                 DestRegister: physicalRegister,
                 OpAIsReady: opAValue != nil,
@@ -69,8 +69,12 @@ struct RenameAndDispatchUnit {
         return min(capacity - state.ActiveList.count, capacity - state.IntegerQueue.count)
     }
     
-    private func value(forOp operand: Register, state: State) -> Int? {
-        // Perhaps in physical register or on forwarding path, if not there's no value available
+    private func value(forOp operand: Register, checkImmediateValueForInstruction instruction: Instruction?, state: State) -> Int? {
+        // Immediate value, in physical register or on forwarding path. If not there's no value available
+        if let immediate = instruction?.opBImmediateValue {
+            return immediate
+        }
+        
         if (!state.BusyBitTable[operand]) {
             return state.PhysicalRegisterFile[operand]
         }
