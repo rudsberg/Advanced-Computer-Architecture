@@ -25,7 +25,8 @@ struct App {
         let fetchAndDecodeUnit = FetchAndDecodeUnit()
         let renameAndDispatchUnit = RenameAndDispatchUnit()
         let issueUnit = IssueUnit()
-
+        var ALUs = (0...4).map { ALU(id: $0) }
+        
         // 2. the loop for cycle-by-cycle iterations.
         var cycleCounter = 1
         while (true /* TODO: Quits prematurely, need one more cycle !(state.programMemory.isEmpty && state.ActiveList.isEmpty) */ ) {
@@ -39,6 +40,20 @@ struct App {
             // cycle -> Integer Queue, Active List, Free List
             print("\n======= Starting cycle \(cycleCounter)")
             // Unit READS old state, UPDATES real state
+            
+            // Run ALU action first so forwarding paths are broadcasted before other units execute
+            var aluResults = [ALUItem]()
+            ALUs.enumerated().forEach { (i, alu) in
+                let instructionToProcess = state.pipelineRegister3.count > i ? state.pipelineRegister3[i] : nil
+                if let aluRes = ALUs[i].execute(newInstruction: instructionToProcess) {
+                    aluResults.append(aluRes)
+                }
+            }
+            // Broadcast alu result on forwarding paths
+            state.forwardingPaths = aluResults
+                .filter { !$0.exception }
+                .map { .init(dest: $0.iq.DestRegister, value: $0.computedValue!) }
+            
             let oldState = state
             let fadUpdates = fetchAndDecodeUnit.fetchAndDecode(
                 state: oldState,
@@ -48,12 +63,12 @@ struct App {
                 state: oldState,
                 program: program
             )
-//            state.IntegerQueue = radUpdates.IntegerQueue TODO: double check current update logic with TA
+            // state.IntegerQueue = radUpdates.IntegerQueue TODO: double check current update logic with TA
             state.ActiveList = radUpdates.ActiveList
             state.FreeList = radUpdates.FreeList
-            let iUpdates = issueUnit.issue(state: state)
+            let iUpdates = issueUnit.issue(state: oldState)
             
-            // TODO: supply issued instrctions into ALUs
+            // TODO: exceptions
     
             
             // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
@@ -62,8 +77,10 @@ struct App {
             state.DecodedPCs = radUpdates.DecodedPCAction(fadUpdates.DecodedPCAction(state.DecodedPCs))
             state.RegisterMapTable = radUpdates.RegisterMapTable
             state.BusyBitTable = radUpdates.BusyBitTable
+            state.PhysicalRegisterFile = radUpdates.PhysicalRegisterFile
             state.IntegerQueue = iUpdates.IntegerQueue
             state.IntegerQueue.append(contentsOf: radUpdates.IntegerQueueItemsToAdd)
+            state.pipelineRegister3 = iUpdates.issuedInstructions.map { ALUItem(iq: $0) }
             
             // MARK: - Dump the state
             // TODO: log file too large!

@@ -14,6 +14,7 @@ struct RenameAndDispatchUnit {
         var ActiveList: [ActiveListItem]
         var RegisterMapTable: [Int]
         var BusyBitTable: [Bool]
+        var PhysicalRegisterFile: [Int]
         var IntegerQueueItemsToAdd: [IntegerQueueItem]
     }
     
@@ -31,8 +32,15 @@ struct RenameAndDispatchUnit {
                 ActiveList: state.ActiveList,
                 RegisterMapTable: state.RegisterMapTable,
                 BusyBitTable: state.BusyBitTable,
+                PhysicalRegisterFile: state.PhysicalRegisterFile,
                 IntegerQueueItemsToAdd: []
             )
+        }
+        
+        // Update the physical register file as well as the Busy Bit Table
+        state.forwardingPaths.forEach {
+            state.BusyBitTable[$0.dest] = false
+            state.PhysicalRegisterFile[$0.dest] = $0.value
         }
         
         // Retrive max amount of instructions
@@ -80,7 +88,6 @@ struct RenameAndDispatchUnit {
             )
             IntegerQueueItemsToAdd.append(rsItem)
         }
-        // TODO: "Observe the results of all functional units through the forwarding paths and update the physical register file as well as the Busy Bit Table." have I handled this?
         
         return Updates(
             DecodedPCAction: decodedPCAction,
@@ -88,6 +95,7 @@ struct RenameAndDispatchUnit {
             ActiveList: state.ActiveList,
             RegisterMapTable: state.RegisterMapTable,
             BusyBitTable: state.BusyBitTable,
+            PhysicalRegisterFile: state.PhysicalRegisterFile,
             IntegerQueueItemsToAdd: IntegerQueueItemsToAdd
         )
     }

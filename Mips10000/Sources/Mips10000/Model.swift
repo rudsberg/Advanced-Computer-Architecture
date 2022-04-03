@@ -38,11 +38,15 @@ enum InstructionType: String, Equatable {
 }
 
 struct State: Codable {
-    /// Initial program
-    
     /// Remaining program to execute
     var programMemory = [Instruction]()
     var forwardingPaths = [ForwardingPath]()
+    var pipelineRegister3: [ALUItem] = [] {
+        didSet {
+            assert(pipelineRegister3.count <= 4)
+        }
+    }
+    
     var PC = 0
     var PhysicalRegisterFile = [Int](repeating: 0, count: 64)
     var DecodedPCs = [Int]()
@@ -65,7 +69,6 @@ struct State: Codable {
         }
     }
     
-    // Encode/decode all but program memory
     enum CodingKeys: String, CodingKey {
         case PC
         case PhysicalRegisterFile
@@ -114,4 +117,5 @@ extension Sequence where Element == ForwardingPath {
 struct ALUItem {
     var iq: IntegerQueueItem // TODO: perhaps not the cleanest, see later what fields acutally needed
     var computedValue: Int? = nil
+    var exception: Bool = false
 }

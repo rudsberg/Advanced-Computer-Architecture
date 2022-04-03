@@ -57,10 +57,37 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertEqual(res.PC, 5)
     }
     
+    func testALU() {
+        var alu = ALU(id: 1)
+        var item1 = ALUItem(iq: .mock)
+        item1.iq.OpAValue = 6
+        item1.iq.OpBValue = 11
+        item1.iq.OpCode = "add"
+        
+        var res = alu.execute(newInstruction: item1)
+        XCTAssertNil(res)
+        
+        var item2 = ALUItem(iq: .mock)
+        item2.iq.OpAValue = 10
+        item2.iq.OpBValue = 3
+        item2.iq.OpCode = "sub"
+        
+        res = alu.execute(newInstruction: item2)
+        XCTAssertEqual(res?.computedValue, 6+11)
+        XCTAssertEqual(res?.exception, false)
+        
+        res = alu.execute(newInstruction: nil)
+        XCTAssertEqual(res?.computedValue, 10-3)
+        XCTAssertEqual(res?.exception, false)
+        
+        res = alu.execute(newInstruction: nil)
+        XCTAssertNil(res)
+    }
+    
     func testTestProgram() throws {
         // Run simulation
         let log = "testTestProgram.json"
-        let config = RunConfig(logFile: log, runUpToCycle: 3)
+        let config = RunConfig(logFile: log, runUpToCycle: 5)
         try App(config: config).run()
         
         // From log, retrieve [State] and compare it to oracle
@@ -102,5 +129,11 @@ final class Mips10000Tests: XCTestCase {
       #else
         return Bundle.main.bundleURL
       #endif
+    }
+}
+
+extension IntegerQueueItem {
+    static var mock: IntegerQueueItem {
+        .init(DestRegister: 1, OpAIsReady: true, OpARegTag: 0, OpAValue: 0, OpBIsReady: true, OpBRegTag: 0, OpBValue: 10, OpCode: "add", PC: 0)
     }
 }
