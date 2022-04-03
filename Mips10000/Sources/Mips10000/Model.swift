@@ -106,6 +106,7 @@ struct IntegerQueueItem: Codable, Equatable {
 struct ForwardingPath {
     let dest: Int
     let value: Int
+    let exception: Bool
 }
 
 extension Sequence where Element == ForwardingPath {

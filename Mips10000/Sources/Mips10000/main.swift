@@ -26,6 +26,7 @@ struct App {
         let renameAndDispatchUnit = RenameAndDispatchUnit()
         let issueUnit = IssueUnit()
         var ALUs = (0...4).map { ALU(id: $0) }
+        let commitUnit = CommitUnit()
         
         // 2. the loop for cycle-by-cycle iterations.
         var cycleCounter = 1
@@ -51,8 +52,7 @@ struct App {
             }
             // Broadcast alu result on forwarding paths
             state.forwardingPaths = aluResults
-                .filter { !$0.exception }
-                .map { .init(dest: $0.iq.DestRegister, value: $0.computedValue!) }
+                .map { .init(dest: $0.iq.DestRegister, value: $0.computedValue!, exception: $0.exception) }
             
             let oldState = state
             let fadUpdates = fetchAndDecodeUnit.fetchAndDecode(
@@ -68,6 +68,13 @@ struct App {
             state.FreeList = radUpdates.FreeList
             let iUpdates = issueUnit.issue(state: oldState)
             
+            // Propagate immediate changes to active list to commit unit
+            var oldStatePlusImmediateChanges = oldState
+            oldStatePlusImmediateChanges.ActiveList = state.ActiveList
+            oldStatePlusImmediateChanges.FreeList = state.FreeList
+            let commitUpdates = commitUnit.execute(state: oldStatePlusImmediateChanges)
+            state.ActiveList = commitUpdates.ActiveList
+            
             // TODO: exceptions
     
             
@@ -81,6 +88,7 @@ struct App {
             state.IntegerQueue = iUpdates.IntegerQueue
             state.IntegerQueue.append(contentsOf: radUpdates.IntegerQueueItemsToAdd)
             state.pipelineRegister3 = iUpdates.issuedInstructions.map { ALUItem(iq: $0) }
+            
             
             // MARK: - Dump the state
             // TODO: log file too large!
