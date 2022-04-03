@@ -37,7 +37,7 @@ enum InstructionType: String, Equatable {
     }
 }
 
-class State: Codable {
+struct State: Codable {
     /// Remaining program to execute
     var programMemory = [Instruction]()
     var forwardingPaths = [ForwardingPath]()

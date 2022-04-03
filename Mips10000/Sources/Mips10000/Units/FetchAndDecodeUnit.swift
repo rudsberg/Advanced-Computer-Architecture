@@ -8,8 +8,17 @@
 import Foundation
 
 struct FetchAndDecodeUnit {
-    func fetchAndDecode(state: State, backPressure: Bool) {
-        guard !backPressure else { return }
+    struct Updates {
+        let programMemory: [Instruction]
+        let DecodedPCAction: ([Int]) -> [Int]
+        let PC: Int
+    }
+    
+    func fetchAndDecode(state: State, backPressure: Bool) -> Updates {
+        var state = state
+        guard !backPressure else {
+            return Updates(programMemory: state.programMemory, DecodedPCAction: { $0 }, PC: state.PC)
+        }
         
         // Fetch up to 4 instructions from program memory
         let numToFetch = state.programMemory.count > 4 ? 4 : state.programMemory.count
@@ -18,9 +27,16 @@ struct FetchAndDecodeUnit {
         state.programMemory = Array(state.programMemory.dropFirst(numToFetch))
         
         // Pass fetched instructions to Rename and Dispatch stage
-        state.DecodedPCs = state.DecodedPCs + fetched.map { $0.pc }
+        let decodedPCAction: ([Int]) -> [Int] = { $0 + fetched.map { $0.pc } }
+        // state.DecodedPCs = state.DecodedPCs + fetched.map { $0.pc }
         
         // Update PC
         state.PC += fetched.count
+        
+        return Updates(
+            programMemory: state.programMemory,
+            DecodedPCAction: decodedPCAction,
+            PC: state.PC
+        )
     }
 }

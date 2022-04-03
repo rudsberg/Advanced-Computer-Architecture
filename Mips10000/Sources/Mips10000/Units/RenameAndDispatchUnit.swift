@@ -8,13 +8,32 @@
 import Foundation
 
 struct RenameAndDispatchUnit {
+    struct Updates {
+        var DecodedPCAction: ([Int]) -> [Int]
+        var FreeList: [Int]
+        var ActiveList: [ActiveListItem]
+        var RegisterMapTable: [Int]
+        var BusyBitTable: [Bool]
+        var IntegerQueue: [IntegerQueueItem]
+    }
+    
     func backPresssure(state: State) -> Bool {
         // TODO: unsure, "check if there are enough physical registers", always enough with 64?
         maxInstructionsRetrievable(state: state) == 0
     }
     
-    func renameAndDispatch(state: State, program: [Instruction]) {
-        guard !backPresssure(state: state) else { return }
+    func renameAndDispatch(state: State, program: [Instruction]) -> Updates {
+        var state = state
+        guard !backPresssure(state: state) else {
+            return Updates(
+                DecodedPCAction: { $0 },
+                FreeList: state.FreeList,
+                ActiveList: state.ActiveList,
+                RegisterMapTable: state.RegisterMapTable,
+                BusyBitTable: state.BusyBitTable,
+                IntegerQueue: state.IntegerQueue
+            )
+        }
         
         // Retrive max amount of instructions
         let numToRetrive = min(maxInstructionsRetrievable(state: state), min(4, state.DecodedPCs.count))
@@ -24,7 +43,7 @@ struct RenameAndDispatchUnit {
         
         // Remove retrieved from DIR
         print("R&D – Decoding \(numToRetrive) instructions")
-        state.DecodedPCs = Array(state.DecodedPCs.dropFirst(numToRetrive))
+        let decodedPCAction: ([Int]) -> [Int] = { Array($0.dropFirst(numToRetrive)) }
         
         // Rename up to 4 registers from DIR
         instructions.forEach { i in
@@ -50,10 +69,10 @@ struct RenameAndDispatchUnit {
             let rsItem = IntegerQueueItem(
                 DestRegister: physicalRegister,
                 OpAIsReady: opAValue != nil,
-                OpARegTag: i.opA,
+                OpARegTag: i.opA, // TODO: 'when value of operand A is available within integer queue we don't care of this field' 
                 OpAValue: opAValue ?? 0,
                 OpBIsReady: opBValue != nil,
-                OpBRegTag: i.opB,
+                OpBRegTag: i.opBImmediateValue != nil ? 0 : i.opB, // Fallback to 0 for immediate value to conform to test suite
                 OpBValue: opBValue ?? 0,
                 OpCode: i.type.rawValue,
                 PC: i.pc
@@ -61,6 +80,15 @@ struct RenameAndDispatchUnit {
             state.IntegerQueue.append(rsItem)
         }
         // TODO: "Observe the results of all functional units through the forwarding paths and update the physical register file as well as the Busy Bit Table." have I handled this?
+        
+        return Updates(
+            DecodedPCAction: decodedPCAction,
+            FreeList: state.FreeList,
+            ActiveList: state.ActiveList,
+            RegisterMapTable: state.RegisterMapTable,
+            BusyBitTable: state.BusyBitTable,
+            IntegerQueue: state.IntegerQueue
+        )
     }
     
     /// Num instructions that the active list and integer queue can maximally handle

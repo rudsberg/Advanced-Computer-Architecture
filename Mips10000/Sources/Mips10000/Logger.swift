@@ -15,6 +15,15 @@ struct Logger {
             // Get current state, append current state and write update
             var newState = try fileIO.read([State].self, documentName: documentName)
             newState.append(state)
+            // TODO: Really?...
+            // Transforms all 'addi' to 'add'
+            newState.enumerated().forEach { (i, state) in
+                newState[i].IntegerQueue.enumerated().forEach { (j, item) in
+                    if (item.OpCode == InstructionType.addi.rawValue) {
+                        newState[i].IntegerQueue[j].OpCode = InstructionType.add.rawValue
+                    }
+                }
+            }
             try fileIO.write(newState, toDocumentNamed: documentName)
         } else {
             // Create file and write current state

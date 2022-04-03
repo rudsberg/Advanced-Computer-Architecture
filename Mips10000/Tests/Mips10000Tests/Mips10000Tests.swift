@@ -27,35 +27,40 @@ final class Mips10000Tests: XCTestCase {
         state.programMemory = testProgram
         
         // Fetch&Decode regular test program
-        fad.fetchAndDecode(state: state, backPressure: true)
-        XCTAssertEqual(state.DecodedPCs, [])
-        XCTAssertEqual(state.programMemory, testProgram)
-        XCTAssertEqual(state.PC, 0)
+        var res = fad.fetchAndDecode(state: state, backPressure: true)
+        XCTAssertEqual(res.DecodedPCAction(state.DecodedPCs), [])
+        XCTAssertEqual(res.programMemory, testProgram)
+        XCTAssertEqual(res.PC, 0)
         
-        fad.fetchAndDecode(state: state, backPressure: false)
-        XCTAssertEqual(state.DecodedPCs, [0, 1, 2, 3])
-        XCTAssertEqual(state.programMemory, [])
-        XCTAssertEqual(state.PC, 4)
+        res = fad.fetchAndDecode(state: state, backPressure: false)
+        XCTAssertEqual(res.DecodedPCAction(state.DecodedPCs), [0, 1, 2, 3])
+        XCTAssertEqual(res.programMemory, [])
+        XCTAssertEqual(res.PC, 4)
         
         // Test with one more instruction (5)
         let fifthInstruction = Instruction(pc: 4, dest: 0, opA: 1, opB: 2, type: .add)
         state = State()
         state.programMemory = testProgram + [fifthInstruction]
-        fad.fetchAndDecode(state: state, backPressure: false)
-        XCTAssertEqual(state.DecodedPCs, [0, 1, 2, 3])
-        XCTAssertEqual(state.programMemory, [fifthInstruction])
-        XCTAssertEqual(state.PC, 4)
+        res = fad.fetchAndDecode(state: state, backPressure: false)
+        XCTAssertEqual(res.DecodedPCAction(state.DecodedPCs), [0, 1, 2, 3])
+        XCTAssertEqual(res.programMemory, [fifthInstruction])
+        XCTAssertEqual(res.PC, 4)
         
-        fad.fetchAndDecode(state: state, backPressure: false)
-        XCTAssertEqual(state.DecodedPCs, [0, 1, 2, 3, 4])
-        XCTAssertEqual(state.programMemory, [])
-        XCTAssertEqual(state.PC, 5)
+        // Must update state for next state update
+        state.programMemory = res.programMemory
+        state.DecodedPCs = res.DecodedPCAction(state.DecodedPCs)
+        state.PC = res.PC
+        
+        res = fad.fetchAndDecode(state: state, backPressure: false)
+        XCTAssertEqual(res.DecodedPCAction(state.DecodedPCs), [0, 1, 2, 3, 4])
+        XCTAssertEqual(res.programMemory, [])
+        XCTAssertEqual(res.PC, 5)
     }
     
     func testTestProgram() throws {
         // Run simulation
         let log = "testTestProgram.json"
-        let config = RunConfig(logFile: log, numCyclesToRun: 2)
+        let config = RunConfig(logFile: log, runUpToCycle: 2)
         try App(config: config).run()
         
         // From log, retrieve [State] and compare it to oracle

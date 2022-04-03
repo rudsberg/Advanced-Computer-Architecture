@@ -3,8 +3,10 @@ import Foundation
 struct RunConfig {
     typealias Cycle = Int
     let logFile: String
-    var numCyclesToRun: Cycle? = nil
+    var runUpToCycle: Cycle? = nil
 }
+
+typealias StateMutation = () -> State
 
 struct App {
     let config: RunConfig
@@ -17,7 +19,7 @@ struct App {
         program.forEach({ print($0) })
 
         // 1. dump the state of the reset system
-        let state = State()
+        var state = State()
         state.programMemory = program
         try Logger().updateLog(with: state, documentName: config.logFile, deleteExistingFile: true)
 
@@ -27,22 +29,39 @@ struct App {
 
         // 2. the loop for cycle-by-cycle iterations.
         var cycleCounter = 0
-        while (!(state.programMemory.isEmpty && state.ActiveList.isEmpty)) {
-            if (config.numCyclesToRun != nil && cycleCounter > config.numCyclesToRun!) {
+        while (true /* Quits prematurely, need one more cycle !(state.programMemory.isEmpty && state.ActiveList.isEmpty) */ ) {
+            if (config.runUpToCycle != nil && cycleCounter > config.runUpToCycle!) {
                 break
             }
             
-            // Propagate
+            // MARK: - Propagate
+            // Make copy of current state which will be consumed & updated by units EXCEPT
+            // those units that can access data structures that can be updated and read in the same
+            // cycle -> Integer Queue, Active List, Free List
             print("======= Starting cycle \(cycleCounter)")
-            fetchAndDecodeUnit.fetchAndDecode(
-                state: state,
-                backPressure: renameAndDispatchUnit.backPresssure(state: state)
+            // Unit READS old state, UPDATES real state
+            let oldState = state
+            let fadUpdates = fetchAndDecodeUnit.fetchAndDecode(
+                state: oldState,
+                backPressure: renameAndDispatchUnit.backPresssure(state: oldState)
             )
-            renameAndDispatchUnit.renameAndDispatch(state: state, program: program)
+            let radUpdates = renameAndDispatchUnit.renameAndDispatch(
+                state: oldState,
+                program: program
+            )
+            state.IntegerQueue = radUpdates.IntegerQueue
+            state.ActiveList = radUpdates.ActiveList
+            state.FreeList = radUpdates.FreeList
+        
             
-            // TODO: latch
+            // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
+            state.programMemory = fadUpdates.programMemory
+            state.DecodedPCs = radUpdates.DecodedPCAction(fadUpdates.DecodedPCAction(state.DecodedPCs))
+            state.PC = fadUpdates.PC
+            state.RegisterMapTable = radUpdates.RegisterMapTable
+            state.BusyBitTable = radUpdates.BusyBitTable
             
-            // Dump the state
+            // MARK: - Dump the state
             // TODO: log file too large!
             try Logger().updateLog(with: state, documentName: config.logFile)
             
@@ -68,7 +87,7 @@ struct App {
     }
 }
 
-let config = RunConfig(logFile: "output2.json", numCyclesToRun: 2)
+let config = RunConfig(logFile: "output3.json", runUpToCycle: 2)
 try App(config: config).run()
 
 print("done")
