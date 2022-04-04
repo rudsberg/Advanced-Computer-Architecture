@@ -87,7 +87,7 @@ final class Mips10000Tests: XCTestCase {
     func testTestProgram() throws {
         // Run simulation
         let log = "testTestProgram.json"
-        let config = RunConfig(logFile: log, runUpToCycle: 4)
+        let config = RunConfig(logFile: log, runUpToCycle: 5)
         try App(config: config).run()
         
         // From log, retrieve [State] and compare it to oracle

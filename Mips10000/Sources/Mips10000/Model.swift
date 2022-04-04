@@ -107,6 +107,7 @@ struct ForwardingPath {
     let dest: Int
     let value: Int
     let exception: Bool
+    let instructionPC: Int
 }
 
 extension Sequence where Element == ForwardingPath {
