@@ -17,21 +17,16 @@ struct IssueUnit {
         var state = state
         
         // Update IQ based on forwarding paths
-        // TODO: unsure about filtering value
         state.forwardingPaths.filter{ $0.value != nil }.enumerated().forEach { (i, fp) in
-            // Check all opA and update
-            // TODO: dest of ALU operation may been overwritten, how do I retrieve the original logical value?
-//            let logical = state.RegisterMapTable.firstIndex(where: { $0 == fp.iq.DestRegister })
-            if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpARegTag == fp.iq.DestRegister }) {
-                state.IntegerQueue[indexUpdate].OpAValue = fp.value!
-                state.IntegerQueue[indexUpdate].OpAIsReady = true
-            }
-            
-            // Check all opB, and not immediate value, then update
-            if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpBRegTag == fp.iq.DestRegister }) {
-                if (state.IntegerQueue[indexUpdate].OpCode != InstructionType.addi.rawValue) {
-                    state.IntegerQueue[indexUpdate].OpBValue = fp.value!
-                    state.IntegerQueue[indexUpdate].OpBIsReady = true
+            state.IntegerQueue.enumerated().forEach { (i, item) in
+                if (item.OpARegTag == fp.iq.DestRegister) {
+                    state.IntegerQueue[i].OpAValue = fp.value!
+                    state.IntegerQueue[i].OpAIsReady = true
+                }
+                
+                if (state.IntegerQueue[i].OpCode != InstructionType.addi.rawValue && item.OpBRegTag == fp.iq.DestRegister) {
+                    state.IntegerQueue[i].OpBValue = fp.value!
+                    state.IntegerQueue[i].OpBIsReady = true
                 }
             }
         }

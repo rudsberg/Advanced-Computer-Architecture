@@ -172,7 +172,6 @@ final class Mips10000Tests: XCTestCase {
     
     func testException() throws {
         // Exception program
-        // TODO: mul verkar inte spara 30 i x2!
         /*
          [
          "addi x0 x1 10",   -- load 10 into x0
@@ -186,20 +185,21 @@ final class Mips10000Tests: XCTestCase {
          */
         
         // Run program
-//        let logFile = "result4.json"
-//        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
-//        try App(config: config).run()
-//        let producedStates = try fileIO.read([State].self, documentName: logFile)
-//
-//        // Verify what we know must be true
-//        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
-//        let lastState = producedStates.last!
-//        XCTAssertEqual(lastState.PhysicalRegisterFile[0], 10)
-//        XCTAssertEqual(lastState.PhysicalRegisterFile[1], 3)
-//        XCTAssertEqual(lastState.PhysicalRegisterFile[2], 30)
+        let logFile = "result4.json"
+        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
+        try App(config: config).run()
+        let producedStates = try fileIO.read([State].self, documentName: logFile)
+
+        // Verify what we know must be true
+        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
+        let lastState = producedStates.last!
+        XCTAssertEqual(lastState.PhysicalRegisterFile[32], 10)
+        XCTAssertEqual(lastState.PhysicalRegisterFile[33], 3)
+        XCTAssertEqual(lastState.PhysicalRegisterFile[34], 30)
 //        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
-//        XCTAssert(producedStates.contains(where: { $0.Exception && $0.ExceptionPC == 65536 }))
-//        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
+        XCTAssert(producedStates.contains(where: { $0.Exception }))
+        XCTAssert(producedStates.contains(where: { $0.PC == 65536 }))
+        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
     }
     
     func testTestProgram() throws {
@@ -226,15 +226,26 @@ final class Mips10000Tests: XCTestCase {
             oracleFile: "result1.json"
         )
     }
-    //
-    //    func testTestProgram2() throws {
-    //        try verifyProgram(
-    //            saveOutputInLog: "test2output.json",
-    //            programFile: "test2.json",
-    //            oracleFile: "result2.json"
-    //        )
-    //    }
-    //
+
+    func testTestProgram2() throws {
+        /*
+         [
+             "add x0, x1, x2",
+             "addi x1, x2, 10",
+             "sub x2, x3, x4",
+             "mulu x1, x2, x3",
+             "divu x1, x2, x3",
+             "remu x1, x2, x3"
+         ]
+         */
+        
+        try verifyProgram(
+            saveOutputInLog: "test2output.json",
+            programFile: "test2.json",
+            oracleFile: "result2.json"
+        )
+    }
+
     
 //    func testTestProgram3() throws {
 //        try verifyProgram(

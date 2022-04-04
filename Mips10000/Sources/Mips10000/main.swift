@@ -109,6 +109,12 @@ struct App {
                 state.IntegerQueue.removeAll()
                 state.pipelineRegister3.removeAll()
                 ALUs.enumerated().forEach { (i, _) in ALUs[i].clearCurrentInstruction() }
+                
+                let recovery = commitUnit.execute(state: state)
+                state.ActiveList = recovery.ActiveList
+                state.BusyBitTable = recovery.BusyBitTable
+                state.RegisterMapTable = recovery.RegisterMapTable
+                state.FreeList = recovery.FreeList
             }
                         
             
@@ -127,8 +133,8 @@ struct App {
 }
 
 let config = RunConfig(
-    programFile: "test1.json",
-    logFile: "result1.json",
+    programFile: "test2.json",
+    logFile: "result2.json",
     runUpToCycle: 100
 )
 

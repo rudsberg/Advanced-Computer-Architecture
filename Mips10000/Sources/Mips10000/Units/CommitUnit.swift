@@ -76,6 +76,8 @@ struct CommitUnit {
             result.ActiveList = result.ActiveList.filter { $0.PC != instruction.PC }
         }
         
+        print("CU – commiting \(intructionsToCommit.map { String($0.PC) }.split(separator: ", "))")
+        
         // Free physical registers
         result.FreeList.append(contentsOf: intructionsToCommit.map { $0.LogicalDestination })
         
@@ -83,16 +85,30 @@ struct CommitUnit {
     }
     
     private func exceptionRecovery(state: State) -> Result {
+        var result = Result(ActiveList: state.ActiveList, FreeList: state.FreeList, Exception: state.Exception, PC: state.PC, ExceptionPC: state.ExceptionPC, RegisterMapTable: state.RegisterMapTable, BusyBitTable: state.BusyBitTable)
+        
         // Pick up to four instructions at bottom of reversed program order (highest PCs, excluding exception)
         var instructions = Array(state.ActiveList
-            .filter { !$0.Exception }
             .sorted(by: { $0.PC > $1.PC }))
         instructions = Array(instructions.prefix(upTo: min(4, instructions.count)))
         
-        // Set Register Map Table values to be the previous values
+        print("CU - exception recovery, rolling back \(instructions.count) instructions")
+        
         instructions.forEach { instruction in
+            // Update busy bit
+            let busyBitIndexToUpdate = state.RegisterMapTable[instruction.LogicalDestination]
+            result.BusyBitTable[busyBitIndexToUpdate] = false
             
+            // Update register map table
+            result.RegisterMapTable[instruction.LogicalDestination] = instruction.OldDestination
+            
+            // Add to free list
+            result.FreeList.append(instruction.OldDestination)
         }
-        fatalError("Not implemented")
+        
+        // Drop selected items from active list
+        result.ActiveList = result.ActiveList.filter { item in !instructions.contains(where: { $0.PC == item.PC }) }
+        
+        return result
     }
 }
