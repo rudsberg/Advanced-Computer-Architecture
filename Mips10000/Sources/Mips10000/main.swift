@@ -30,7 +30,7 @@ struct App {
         
         // 2. the loop for cycle-by-cycle iterations.
         var cycleCounter = 1
-        while (true /* TODO: Quits prematurely, need one more cycle !(state.programMemory.isEmpty && state.ActiveList.isEmpty) */ ) {
+        while (!(state.programMemory.isEmpty && state.ActiveList.isEmpty) || cycleCounter <= 2) {
             if (config.runUpToCycle != nil && cycleCounter > config.runUpToCycle!) {
                 break
             }
@@ -93,7 +93,6 @@ struct App {
             
             
             // MARK: - Dump the state
-            // TODO: log file too large!
             try Logger().updateLog(with: state, documentName: config.logFile)
             
             // For debugging purposes
@@ -105,21 +104,13 @@ struct App {
                 fatalError("Stuck in while loop")
             }
         }
-        // while(not (noInstruction() and activeListIsEmpty())){
-            // do propagation
-            // if you have multiple modules, propagate each of them
-            // propagate();
-            // advance clock, start next cycle
-            // latch();
-            // dump the state
-            // dumpStateIntoLog();
-        // }
-        // 3. save the output JSON log
-        // saveLog();
     }
+    
+
 }
 
-let config = RunConfig(logFile: "output3.json", runUpToCycle: 3)
+
+let config = RunConfig(logFile: "output3.json", runUpToCycle: nil)
 try App(config: config).run()
 
 print("done")
