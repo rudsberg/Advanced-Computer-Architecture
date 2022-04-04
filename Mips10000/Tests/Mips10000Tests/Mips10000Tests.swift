@@ -249,33 +249,33 @@ final class Mips10000Tests: XCTestCase {
         )
     }
 
-    func testTestProgram2() throws {
-        /*
-         [
-             "add x0, x1, x2",
-             "addi x1, x2, 10",
-             "sub x2, x3, x4",
-             "mulu x1, x2, x3",
-             "divu x1, x2, x3",
-             "remu x1, x2, x3"
-         ]
-         */
-
-        try verifyProgram(
-            saveOutputInLog: "test2log.json",
-            programFile: "test2.json",
-            oracleFile: "result2.json"
-        )
-    }
-
-    
-    func testTestProgram3() throws {
-        try verifyProgram(
-            saveOutputInLog: "test3output.json",
-            programFile: "test3.json",
-            oracleFile: "result3.json"
-        )
-    }
+//    func testTestProgram2() throws {
+//        /*
+//         [
+//             "add x0, x1, x2",
+//             "addi x1, x2, 10",
+//             "sub x2, x3, x4",
+//             "mulu x1, x2, x3",
+//             "divu x1, x2, x3",
+//             "remu x1, x2, x3"
+//         ]
+//         */
+//
+//        try verifyProgram(
+//            saveOutputInLog: "test2log.json",
+//            programFile: "test2.json",
+//            oracleFile: "result2.json"
+//        )
+//    }
+//
+//    
+//    func testTestProgram3() throws {
+//        try verifyProgram(
+//            saveOutputInLog: "test3output.json",
+//            programFile: "test3.json",
+//            oracleFile: "result3.json"
+//        )
+//    }
     
     private func verifyProgram(saveOutputInLog log: String, programFile: String, oracleFile: String) throws {
         // Run simulation
