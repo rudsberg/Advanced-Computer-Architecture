@@ -16,7 +16,7 @@ struct FetchAndDecodeUnit {
     
     func fetchAndDecode(state: State, backPressure: Bool) -> Updates {
         var state = state
-        guard !backPressure else {
+        guard !backPressure, !state.Exception else {
             return Updates(programMemory: state.programMemory, DecodedPCAction: { $0 }, PC: state.PC)
         }
         

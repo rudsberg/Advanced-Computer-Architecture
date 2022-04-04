@@ -2,6 +2,7 @@ import Foundation
 
 struct RunConfig {
     typealias Cycle = Int
+    let programFile: String
     let logFile: String
     var runUpToCycle: Cycle? = nil
 }
@@ -12,7 +13,7 @@ struct App {
     func run() throws {
         // Setup environ
         // 0. parse JSON to get the program
-        let program = try Parser().parseInstructions(fromFile: "test.json")
+        let program = try Parser().parseInstructions(fromFile: config.programFile)
         print("======= Program =======")
         program.forEach({ print($0) })
 
@@ -73,11 +74,6 @@ struct App {
             oldStatePlusImmediateChanges.ActiveList = state.ActiveList
             oldStatePlusImmediateChanges.FreeList = state.FreeList
             let commitUpdates = commitUnit.execute(state: oldStatePlusImmediateChanges)
-            state.ActiveList = commitUpdates.ActiveList
-            
-            // TODO: exceptions
-            commitUpdates.Exception
-    
             
             // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
             state.programMemory = fadUpdates.programMemory
@@ -90,7 +86,8 @@ struct App {
             state.IntegerQueue.append(contentsOf: radUpdates.IntegerQueueItemsToAdd)
             state.pipelineRegister3 = iUpdates.issuedInstructions.map { ALUItem(iq: $0) }
             state.FreeList = commitUpdates.FreeList
-            
+            state.ActiveList = commitUpdates.ActiveList
+            state.Exception = commitUpdates.Exception
             
             // MARK: - Dump the state
             try Logger().updateLog(with: state, documentName: config.logFile)
@@ -98,14 +95,19 @@ struct App {
             // For debugging purposes
             print("======= Ending cycle \(cycleCounter)\n")
             cycleCounter += 1
+            if (cycleCounter > 1000) {
+                // TODO: remove for final submission
+                fatalError("Likely an infite loop")
+            }
         }
     }
-    
-
 }
 
+let config = RunConfig(
+    programFile: "test.json",
+    logFile: "output.json",
+    runUpToCycle: nil
+)
 
-let config = RunConfig(logFile: "output3.json", runUpToCycle: nil)
 try App(config: config).run()
 
-print("done")

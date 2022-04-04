@@ -4,24 +4,19 @@ import class Foundation.Bundle
 
 final class Mips10000Tests: XCTestCase {
     private let fileIO = FileIOController()
-    private var testProgram: [Instruction] {
-        try! Parser().parseInstructions(fromFile: "test.json")
-    }
-    private var trueState: [State] {
-        try! fileIO.read([State].self, documentName: "test_result.json")
-    }
-    
+
     func testStartupState() throws {
         // Write initial state
         let initialState = State()
         try Logger().updateLog(with: initialState, documentName: "test_startup_state.json", deleteExistingFile: true)
         
-        let trueInitialState = trueState.first!
+        let trueInitialState = try fileIO.read([State].self, documentName: "test_result.json").first!
     
         checkState(state: initialState, comparedTo: trueInitialState)
     }
     
     func testFetchAndDecodeUnit() throws {
+        let testProgram = try Parser().parseInstructions(fromFile: "test.json")
         let fad = FetchAndDecodeUnit()
         var state = State()
         state.programMemory = testProgram
@@ -84,18 +79,47 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertNil(res)
     }
     
+    func testCommitUnit() {
+//        let cu = CommitUnit()
+//        var state = State()
+//        state.ActiveList = [
+//            .init(Done: false, Exception: false, LogicalDestination: 0, OldDestination: 0, PC: 0),
+//            .init(Done: false, Exception: false, LogicalDestination: 1, OldDestination: 1, PC: 1),
+//        ]
+//
+//        var res = cu.execute(state: state)
+//        XCTAssertEqual(<#T##expression1: Equatable##Equatable#>, <#T##expression2: Equatable##Equatable#>)
+    }
+    
     func testTestProgram() throws {
+        try verifyProgram(
+            saveOutputInLog: "testTestProgram.json",
+            programFile: "test.json",
+            oracleFile: "test_result.json"
+        )
+    }
+    
+    func testAddMulTestProgram1() {
+        
+    }
+    
+    func verifyProgram(saveOutputInLog log: String, programFile: String, oracleFile: String) throws {
         // Run simulation
-        let log = "testTestProgram.json"
-        let config = RunConfig(logFile: log, runUpToCycle: nil)
+        let config = RunConfig(programFile: programFile, logFile: log, runUpToCycle: nil)
         try App(config: config).run()
         
-        // From log, retrieve [State] and compare it to oracle
-        let producedStates = try fileIO.read([State].self, documentName: log)
-        XCTAssertEqual(producedStates.count, trueState.count)
+        // Load oracle
+        let oracle = try fileIO.read([State].self, documentName: oracleFile)
         
+        // From produced log, retrieve [State]
+        let producedStates = try fileIO.read([State].self, documentName: log)
+        
+        // Num produced states should be equal to num oracle states
+        XCTAssertEqual(producedStates.count, oracle.count)
+
+        // Verify cycle per cycle
         var cycle = 0
-        zip(producedStates, trueState).forEach {
+        zip(producedStates, oracle).forEach {
             checkState(state: $0, comparedTo: $1, cycle: cycle)
             cycle += 1
         }
