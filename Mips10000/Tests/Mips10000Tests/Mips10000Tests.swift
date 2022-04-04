@@ -79,7 +79,7 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertNil(res)
     }
     
-    func testMulProgram() throws {
+    func testSimpleRAWProgram() throws {
         /*
          [
          "addi x0 x0 2",    -- x0 <- 2
@@ -119,6 +119,58 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertEqual(lastState.PhysicalRegisterFile[lastState.RegisterMapTable[2]], 2*3)
     }
     
+    func testCommitOrderProgram() throws {
+        /*
+         [
+             "addi x0 x1 10",
+             "addi x1 x2 3",
+             "mulu x2 x0 x1",   -- RAW dep on x0 and x1
+             "addi x0 x5 20",   -- adds should be executed and put in ROB until mulu is done
+             "addi x1 x6 21",
+             "addi x2 x7 22"
+         ]
+         */
+        
+        let logFile = "result6.json"
+        let config = RunConfig(programFile: "test6.json", logFile: logFile, runUpToCycle: nil)
+        try App(config: config).run()
+        let producedStates = try fileIO.read([State].self, documentName: logFile)
+        
+        let cycle2 = producedStates[2]
+        let mulInstr = cycle2.IntegerQueue[2]
+        XCTAssertEqual(cycle2.IntegerQueue.count, 4)
+        XCTAssertEqual(mulInstr.OpAIsReady, false)
+        XCTAssertEqual(mulInstr.OpBIsReady, false)
+        XCTAssertEqual(mulInstr.OpCode, InstructionType.mulu.rawValue)
+        XCTAssertEqual(cycle2.ActiveList.count, 4)
+        
+        let cycle3 = producedStates[3]
+        XCTAssertEqual(cycle3.IntegerQueue.count, 3)
+        XCTAssertEqual(cycle3.ActiveList.count, 6)
+
+        let cycle4 = producedStates[4]
+        XCTAssertEqual(cycle4.IntegerQueue.count, 1)
+        XCTAssertEqual(cycle4.ActiveList.count, 6)
+        
+        // mul proceeds
+        let cycle5 = producedStates[5]
+        XCTAssertEqual(cycle5.IntegerQueue.count, 0)
+        XCTAssertEqual(cycle5.ActiveList.count, 6)
+        
+        // mul in alu processing and two first addi commited
+        let cycle6 = producedStates[6]
+        XCTAssertEqual(cycle6.ActiveList.count, 4)
+        
+        // mul in forwarding path
+        let cycle7 = producedStates[7]
+        XCTAssertEqual(cycle7.forwardingPaths.first?.iq.OpCode, InstructionType.mulu.rawValue)
+        XCTAssertEqual(cycle7.ActiveList.count, 4)
+        
+        // all commited
+        let cycle8 = producedStates[8]
+        XCTAssertEqual(cycle8.ActiveList.count, 0)
+    }
+    
     func testException() throws {
         // Exception program
         // TODO: mul verkar inte spara 30 i x2!
@@ -135,20 +187,20 @@ final class Mips10000Tests: XCTestCase {
          */
         
         // Run program
-        //        let logFile = "result4.json"
-        //        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
-        //        try App(config: config).run()
-        //        let producedStates = try fileIO.read([State].self, documentName: logFile)
-        //
-        //        // Verify what we know must be true
-        //        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
-        //        let lastState = producedStates.last!
-        //        XCTAssertEqual(lastState.PhysicalRegisterFile[0], 10)
-        //        XCTAssertEqual(lastState.PhysicalRegisterFile[1], 3)
-        //        XCTAssertEqual(lastState.PhysicalRegisterFile[2], 30)
-        //        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
-        //        XCTAssert(producedStates.contains(where: { $0.Exception && $0.ExceptionPC == 65536 }))
-        //        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
+        let logFile = "result4.json"
+        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
+        try App(config: config).run()
+        let producedStates = try fileIO.read([State].self, documentName: logFile)
+        
+        // Verify what we know must be true
+        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
+        let lastState = producedStates.last!
+        XCTAssertEqual(lastState.PhysicalRegisterFile[0], 10)
+        XCTAssertEqual(lastState.PhysicalRegisterFile[1], 3)
+        XCTAssertEqual(lastState.PhysicalRegisterFile[2], 30)
+        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
+        XCTAssert(producedStates.contains(where: { $0.Exception && $0.ExceptionPC == 65536 }))
+        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
     }
     
     func testTestProgram() throws {
@@ -162,18 +214,18 @@ final class Mips10000Tests: XCTestCase {
     func testTestProgram1() throws {
         /*
          [
-             "addi x1, x0, 1",
-             "addi x2, x1, 1",
-             "add  x1, x2, x1",
-             "mulu x0, x0, x1"
+         "addi x1, x0, 1",
+         "addi x2, x1, 1",
+         "add  x1, x2, x1",
+         "mulu x0, x0, x1"
          ]
          */
         
-        try verifyProgram(
-            saveOutputInLog: "test1output.json",
-            programFile: "test1.json",
-            oracleFile: "result1.json"
-        )
+        //        try verifyProgram(
+        //            saveOutputInLog: "test1output.json",
+        //            programFile: "test1.json",
+        //            oracleFile: "result1.json"
+        //        )
     }
     //
     //    func testTestProgram2() throws {
