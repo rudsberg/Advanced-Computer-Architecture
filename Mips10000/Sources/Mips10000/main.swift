@@ -76,6 +76,7 @@ struct App {
             state.ActiveList = commitUpdates.ActiveList
             
             // TODO: exceptions
+            commitUpdates.Exception
     
             
             // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
@@ -88,6 +89,7 @@ struct App {
             state.IntegerQueue = iUpdates.IntegerQueue
             state.IntegerQueue.append(contentsOf: radUpdates.IntegerQueueItemsToAdd)
             state.pipelineRegister3 = iUpdates.issuedInstructions.map { ALUItem(iq: $0) }
+            state.FreeList = commitUpdates.FreeList
             
             
             // MARK: - Dump the state

@@ -87,13 +87,13 @@ final class Mips10000Tests: XCTestCase {
     func testTestProgram() throws {
         // Run simulation
         let log = "testTestProgram.json"
-        let config = RunConfig(logFile: log, runUpToCycle: 5)
+        let config = RunConfig(logFile: log, runUpToCycle: 6)
         try App(config: config).run()
         
         // From log, retrieve [State] and compare it to oracle
         let producedStates = try fileIO.read([State].self, documentName: log)
+        XCTAssertEqual(producedStates.count, trueState.count)
         
-        // TODO: when all steps implemented XCTAssertEqual(producedStates.count, trueState.count)
         var cycle = 0
         zip(producedStates, trueState).forEach {
             checkState(state: $0, comparedTo: $1, cycle: cycle)
