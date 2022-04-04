@@ -79,6 +79,37 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertNil(res)
     }
     
+    func testException() throws {
+        // Exception program
+        /*
+         [
+             "addi x0 x1 10",   -- load 10 into x0
+             "addi x1 x2 3",    -- load 3 into x1
+             "mulu x2 x0 x1",   -- x2 <- 10 * 3
+             "divu x0 x1 x13",  -- Exception
+             "addi x0 x5 20",   -- These adds should not be executed (from PC=4)
+             "addi x1 x5 21",
+             "addi x2 x5 22",
+         ]
+         */
+        
+        // Run program
+//        let logFile = "result4.json"
+//        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
+//        try App(config: config).run()
+//        let producedStates = try fileIO.read([State].self, documentName: logFile)
+//        
+//        // Verify what we know must be true
+//        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
+//        let lastState = producedStates.last!
+//        XCTAssertEqual(lastState.PhysicalRegisterFile[0], 10)
+//        XCTAssertEqual(lastState.PhysicalRegisterFile[1], 3)
+//        XCTAssertEqual(lastState.PhysicalRegisterFile[2], 30)
+//        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
+//        XCTAssert(producedStates.contains(where: { $0.Exception && $0.ExceptionPC == 65536 }))
+//        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
+    }
+    
     func testTestProgram() throws {
         try verifyProgram(
             saveOutputInLog: "testTestProgram.json",
@@ -94,7 +125,7 @@ final class Mips10000Tests: XCTestCase {
 //            oracleFile: "result1.json"
 //        )
 //    }
-//    
+//
 //    func testTestProgram2() throws {
 //        try verifyProgram(
 //            saveOutputInLog: "test2output.json",
@@ -102,7 +133,7 @@ final class Mips10000Tests: XCTestCase {
 //            oracleFile: "result2.json"
 //        )
 //    }
-//    
+//
 //    func testTestProgram3() throws {
 //        try verifyProgram(
 //            saveOutputInLog: "test3output.json",

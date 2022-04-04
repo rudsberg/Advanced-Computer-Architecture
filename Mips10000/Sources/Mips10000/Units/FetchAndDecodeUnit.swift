@@ -9,9 +9,9 @@ import Foundation
 
 struct FetchAndDecodeUnit {
     struct Updates {
-        let programMemory: [Instruction]
-        let DecodedPCAction: ([Int]) -> [Int]
-        let PC: Int
+        var programMemory: [Instruction]
+        var DecodedPCAction: ([Int]) -> [Int]
+        var PC: Int
     }
     
     func fetchAndDecode(state: State, backPressure: Bool) -> Updates {
@@ -38,5 +38,18 @@ struct FetchAndDecodeUnit {
             DecodedPCAction: decodedPCAction,
             PC: state.PC
         )
+    }
+    
+    func onException(state: State) -> Updates {
+        var updates = Updates(programMemory: state.programMemory, DecodedPCAction: { $0 }, PC: state.PC)
+        
+        // Set PC to 0x10000
+        // TODO: ask TA if OK to do like this with hex
+        updates.PC = 65536
+        
+        // Clear DIR register
+        updates.DecodedPCAction = { _ in [Int]() }
+        
+        return updates
     }
 }

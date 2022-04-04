@@ -53,6 +53,10 @@ struct ALU {
         }
     }
     
+    mutating func clearCurrentInstruction() {
+        self.currentInstruction = nil
+    }
+    
     private func compute(instruction: IntegerQueueItem) -> Int? {
         switch(InstructionType(rawValue: instruction.OpCode)!) {
         case .add, .addi:

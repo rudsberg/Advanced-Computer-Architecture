@@ -20,14 +20,14 @@ struct IssueUnit {
         state.forwardingPaths.enumerated().forEach { (i, fp) in
             // Check all opA and update
             if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpARegTag == fp.dest }) {
-                state.IntegerQueue[indexUpdate].OpAValue = fp.value
+                state.IntegerQueue[indexUpdate].OpAValue = fp.value!
                 state.IntegerQueue[indexUpdate].OpAIsReady = true
             }
             
             // Check all opB, and not immediate value, then update
             if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpBRegTag == fp.dest }) {
                 if (state.IntegerQueue[indexUpdate].OpCode != InstructionType.addi.rawValue) {
-                    state.IntegerQueue[indexUpdate].OpBValue = fp.value
+                    state.IntegerQueue[indexUpdate].OpBValue = fp.value!
                     state.IntegerQueue[indexUpdate].OpBIsReady = true
                 }
             }

@@ -44,9 +44,7 @@ struct CommitUnit {
             // Check if exception
             let exception = item.Exception
             if (exception) {
-                // TODO: ask TA if OK to do like this with hex
                 result.Exception = true
-                result.PC = 65536 // 0x10000
                 result.ExceptionPC = item.PC
             }
             

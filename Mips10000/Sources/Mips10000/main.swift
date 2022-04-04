@@ -53,7 +53,7 @@ struct App {
             }
             // Broadcast alu result on forwarding paths
             state.forwardingPaths = aluResults
-                .map { .init(dest: $0.iq.DestRegister, value: $0.computedValue!, exception: $0.exception, instructionPC: $0.iq.PC) }
+                .map { .init(dest: $0.iq.DestRegister, value: $0.computedValue, exception: $0.exception, instructionPC: $0.iq.PC) }
             
             let oldState = state
             let fadUpdates = fetchAndDecodeUnit.fetchAndDecode(
@@ -90,14 +90,28 @@ struct App {
             state.FreeList = commitUpdates.FreeList
             state.ActiveList = commitUpdates.ActiveList
             state.Exception = commitUpdates.Exception
-            state.ExceptionPC = commitUpdates.ExceptionPC
+            
+            // MARK: - Exception Recovery - part of the Commit Stage (TODO: refactor into Commit Unit)
             if (state.Exception) {
-                state.PC = commitUpdates.PC
+                // Check if recovery is completed TODO: not sure if this will produce correct logs
+                if (state.ActiveList.isEmpty) {
+                    return
+                }
+                
+                // Record PC of instruction with the exception
+                state.ExceptionPC = commitUpdates.ExceptionPC
+                
+                // Notify fetch and decode unit and record changes
+                let fadExceptionUpdates = fetchAndDecodeUnit.onException(state: state)
+                state.DecodedPCs = fadExceptionUpdates.DecodedPCAction(state.DecodedPCs)
+                state.PC = fadExceptionUpdates.PC
+                
+                // Reset the integer queue and execution stage
+                state.IntegerQueue.removeAll()
+                state.pipelineRegister3.removeAll()
+                ALUs.enumerated().forEach { (i, _) in ALUs[i].clearCurrentInstruction() }
             }
-            
-            // Exception Handling
-            
-            
+                        
             
             // MARK: - Dump the state
             try Logger().updateLog(with: state, documentName: config.logFile)
