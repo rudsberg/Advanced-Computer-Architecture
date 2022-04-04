@@ -98,11 +98,6 @@ struct App {
             // For debugging purposes
             print("======= Ending cycle \(cycleCounter)\n")
             cycleCounter += 1
-            
-            // TODO: remove for final submission
-            if (cycleCounter >= 100) {
-                fatalError("Stuck in while loop")
-            }
         }
     }
     

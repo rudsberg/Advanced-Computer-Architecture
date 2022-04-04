@@ -117,7 +117,7 @@ extension Sequence where Element == ForwardingPath {
 }
 
 struct ALUItem {
-    var iq: IntegerQueueItem // TODO: perhaps not the cleanest, see later what fields acutally needed
+    var iq: IntegerQueueItem
     var computedValue: Int? = nil
     var exception: Bool = false
 }
