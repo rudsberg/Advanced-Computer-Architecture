@@ -84,7 +84,7 @@ final class Mips10000Tests: XCTestCase {
          [
              "addi x0 x0 2",    -- x0 <- 2
              "addi x1 x1 3",    -- x1 <- 3
-             "mulu x2 x0 x1"    -- x2 <- 2*3
+             "mulu x2 x0 x1"    -- x2 <- 2*3, RAW dependency
          ]
          */
         let logFile = "result5-simple-mul.json"
@@ -109,14 +109,14 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertEqual(mulInstr?.OpCode, InstructionType.mulu.rawValue)
         
         // Cycle 5 now should it be processed
-        let cycle5 = producedStates[4]
+        let cycle5 = producedStates[5]
         XCTAssertEqual(cycle5.IntegerQueue.count, 0)
         
         // Verify last state
         let lastState = producedStates.last!
-        XCTAssertEqual(lastState.RegisterMapTable[0], 2)
-        XCTAssertEqual(lastState.RegisterMapTable[1], 3)
-        XCTAssertEqual(lastState.RegisterMapTable[2], 2*3)
+        XCTAssertEqual(lastState.PhysicalRegisterFile[lastState.RegisterMapTable[0]], 2)
+        XCTAssertEqual(lastState.PhysicalRegisterFile[lastState.RegisterMapTable[1]], 3)
+        XCTAssertEqual(lastState.PhysicalRegisterFile[lastState.RegisterMapTable[2]], 2*3)
     }
     
     func testException() throws {

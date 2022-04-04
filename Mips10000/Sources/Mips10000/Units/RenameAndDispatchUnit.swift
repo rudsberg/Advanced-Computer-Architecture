@@ -59,18 +59,6 @@ struct RenameAndDispatchUnit {
             // Get first free element in free list
             let physicalRegister = state.FreeList.first!
             state.FreeList = Array(state.FreeList.dropFirst())
-                        
-            // Add it to active list
-            let logical = i.dest
-            let oldDest = state.RegisterMapTable[logical]
-            let activeListItem = ActiveListItem(LogicalDestination: logical, OldDestination: oldDest, PC: i.pc)
-            state.ActiveList.append(activeListItem)
-            
-            // Update Register Map Table
-            state.RegisterMapTable[logical] = physicalRegister
-            
-            // Update busy bit table with register we used (physical)
-            state.BusyBitTable[physicalRegister] = true
             
             // Allocate entry in integer queue
             let opAValue = value(forOp: i.opA, checkImmediateValueForInstruction: nil, state: state)
@@ -87,6 +75,18 @@ struct RenameAndDispatchUnit {
                 PC: i.pc
             )
             IntegerQueueItemsToAdd.append(rsItem)
+            
+            // Add it to active list
+            let logical = i.dest
+            let oldDest = state.RegisterMapTable[logical]
+            let activeListItem = ActiveListItem(LogicalDestination: logical, OldDestination: oldDest, PC: i.pc)
+            state.ActiveList.append(activeListItem)
+            
+            // Update Register Map Table
+            state.RegisterMapTable[logical] = physicalRegister
+            
+            // Update busy bit table with register we used (physical)
+            state.BusyBitTable[physicalRegister] = true
         }
         
         return Updates(
@@ -112,8 +112,9 @@ struct RenameAndDispatchUnit {
             return immediate
         }
         
-        if (!state.BusyBitTable[operand]) {
-            return state.PhysicalRegisterFile[operand]
+        let physical = state.RegisterMapTable[operand]
+        if (!state.BusyBitTable[physical]) {
+            return state.PhysicalRegisterFile[physical]
         }
         
         if let fp = state.forwardingPaths.first(where: { $0.dest == operand }) {

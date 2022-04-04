@@ -20,13 +20,15 @@ struct IssueUnit {
         // TODO: unsure about filtering value
         state.forwardingPaths.filter{ $0.value != nil }.enumerated().forEach { (i, fp) in
             // Check all opA and update
-            if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpARegTag == fp.dest }) {
+            let logicalRegA = state.RegisterMapTable.firstIndex(where: { $0 == fp.dest })
+            if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpARegTag == logicalRegA }) {
                 state.IntegerQueue[indexUpdate].OpAValue = fp.value!
                 state.IntegerQueue[indexUpdate].OpAIsReady = true
             }
             
             // Check all opB, and not immediate value, then update
-            if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpBRegTag == fp.dest }) {
+            let logicalRegB = state.RegisterMapTable.firstIndex(where: { $0 == fp.dest })
+            if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpBRegTag == logicalRegB }) {
                 if (state.IntegerQueue[indexUpdate].OpCode != InstructionType.addi.rawValue) {
                     state.IntegerQueue[indexUpdate].OpBValue = fp.value!
                     state.IntegerQueue[indexUpdate].OpBIsReady = true
