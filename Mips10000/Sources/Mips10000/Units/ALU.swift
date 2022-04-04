@@ -68,7 +68,11 @@ struct ALU {
                 return instruction.OpAValue / instruction.OpBValue
             }
         case .remu:
-            return instruction.OpAValue % instruction.OpBValue
+            if (instruction.OpBValue == 0) {
+                return nil
+            } else {
+                return instruction.OpAValue % instruction.OpBValue
+            }
         }
     }
 }

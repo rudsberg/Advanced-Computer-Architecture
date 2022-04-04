@@ -75,6 +75,8 @@ struct App {
             oldStatePlusImmediateChanges.FreeList = state.FreeList
             let commitUpdates = commitUnit.execute(state: oldStatePlusImmediateChanges)
             
+            // TODO: stop simulation for exception
+            
             // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
             state.programMemory = fadUpdates.programMemory
             state.PC = fadUpdates.PC
@@ -88,6 +90,14 @@ struct App {
             state.FreeList = commitUpdates.FreeList
             state.ActiveList = commitUpdates.ActiveList
             state.Exception = commitUpdates.Exception
+            state.ExceptionPC = commitUpdates.ExceptionPC
+            if (state.Exception) {
+                state.PC = commitUpdates.PC
+            }
+            
+            // Exception Handling
+            
+            
             
             // MARK: - Dump the state
             try Logger().updateLog(with: state, documentName: config.logFile)
@@ -95,7 +105,7 @@ struct App {
             // For debugging purposes
             print("======= Ending cycle \(cycleCounter)\n")
             cycleCounter += 1
-            if (cycleCounter > 1000) {
+            if (cycleCounter > 100) {
                 // TODO: remove for final submission
                 fatalError("Likely an infite loop")
             }

@@ -79,18 +79,6 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertNil(res)
     }
     
-    func testCommitUnit() {
-//        let cu = CommitUnit()
-//        var state = State()
-//        state.ActiveList = [
-//            .init(Done: false, Exception: false, LogicalDestination: 0, OldDestination: 0, PC: 0),
-//            .init(Done: false, Exception: false, LogicalDestination: 1, OldDestination: 1, PC: 1),
-//        ]
-//
-//        var res = cu.execute(state: state)
-//        XCTAssertEqual(<#T##expression1: Equatable##Equatable#>, <#T##expression2: Equatable##Equatable#>)
-    }
-    
     func testTestProgram() throws {
         try verifyProgram(
             saveOutputInLog: "testTestProgram.json",
@@ -99,11 +87,31 @@ final class Mips10000Tests: XCTestCase {
         )
     }
     
-    func testAddMulTestProgram1() {
-        
-    }
+//    func testTestProgram1() throws {
+//        try verifyProgram(
+//            saveOutputInLog: "test1output.json",
+//            programFile: "test1.json",
+//            oracleFile: "result1.json"
+//        )
+//    }
+//    
+//    func testTestProgram2() throws {
+//        try verifyProgram(
+//            saveOutputInLog: "test2output.json",
+//            programFile: "test2.json",
+//            oracleFile: "result2.json"
+//        )
+//    }
+//    
+//    func testTestProgram3() throws {
+//        try verifyProgram(
+//            saveOutputInLog: "test3output.json",
+//            programFile: "test3.json",
+//            oracleFile: "result3.json"
+//        )
+//    }
     
-    func verifyProgram(saveOutputInLog log: String, programFile: String, oracleFile: String) throws {
+    private func verifyProgram(saveOutputInLog log: String, programFile: String, oracleFile: String) throws {
         // Run simulation
         let config = RunConfig(programFile: programFile, logFile: log, runUpToCycle: nil)
         try App(config: config).run()
