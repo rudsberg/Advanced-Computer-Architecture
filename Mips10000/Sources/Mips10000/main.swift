@@ -127,8 +127,8 @@ struct App {
 }
 
 let config = RunConfig(
-    programFile: "test6.json",
-    logFile: "result6.json",
+    programFile: "test1.json",
+    logFile: "result1.json",
     runUpToCycle: 100
 )
 

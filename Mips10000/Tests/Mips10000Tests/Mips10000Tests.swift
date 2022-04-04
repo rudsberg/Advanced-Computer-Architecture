@@ -122,12 +122,12 @@ final class Mips10000Tests: XCTestCase {
     func testCommitOrderProgram() throws {
         /*
          [
-             "addi x0 x1 10",
-             "addi x1 x2 3",
-             "mulu x2 x0 x1",   -- RAW dep on x0 and x1
-             "addi x0 x5 20",   -- adds should be executed and put in ROB until mulu is done
-             "addi x1 x6 21",
-             "addi x2 x7 22"
+         "addi x0 x1 10",
+         "addi x1 x2 3",
+         "mulu x2 x0 x1",   -- RAW dep on x0 and x1
+         "addi x0 x5 20",   -- adds should be executed and put in ROB until mulu is done
+         "addi x1 x6 21",
+         "addi x2 x7 22"
          ]
          */
         
@@ -147,7 +147,7 @@ final class Mips10000Tests: XCTestCase {
         let cycle3 = producedStates[3]
         XCTAssertEqual(cycle3.IntegerQueue.count, 3)
         XCTAssertEqual(cycle3.ActiveList.count, 6)
-
+        
         let cycle4 = producedStates[4]
         XCTAssertEqual(cycle4.IntegerQueue.count, 1)
         XCTAssertEqual(cycle4.ActiveList.count, 6)
@@ -163,7 +163,6 @@ final class Mips10000Tests: XCTestCase {
         
         // mul in forwarding path
         let cycle7 = producedStates[7]
-        XCTAssertEqual(cycle7.forwardingPaths.first?.iq.OpCode, InstructionType.mulu.rawValue)
         XCTAssertEqual(cycle7.ActiveList.count, 4)
         
         // all commited
@@ -187,20 +186,20 @@ final class Mips10000Tests: XCTestCase {
          */
         
         // Run program
-        let logFile = "result4.json"
-        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
-        try App(config: config).run()
-        let producedStates = try fileIO.read([State].self, documentName: logFile)
-        
-        // Verify what we know must be true
-        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
-        let lastState = producedStates.last!
-        XCTAssertEqual(lastState.PhysicalRegisterFile[0], 10)
-        XCTAssertEqual(lastState.PhysicalRegisterFile[1], 3)
-        XCTAssertEqual(lastState.PhysicalRegisterFile[2], 30)
-        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
-        XCTAssert(producedStates.contains(where: { $0.Exception && $0.ExceptionPC == 65536 }))
-        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
+//        let logFile = "result4.json"
+//        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
+//        try App(config: config).run()
+//        let producedStates = try fileIO.read([State].self, documentName: logFile)
+//
+//        // Verify what we know must be true
+//        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
+//        let lastState = producedStates.last!
+//        XCTAssertEqual(lastState.PhysicalRegisterFile[0], 10)
+//        XCTAssertEqual(lastState.PhysicalRegisterFile[1], 3)
+//        XCTAssertEqual(lastState.PhysicalRegisterFile[2], 30)
+//        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
+//        XCTAssert(producedStates.contains(where: { $0.Exception && $0.ExceptionPC == 65536 }))
+//        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
     }
     
     func testTestProgram() throws {
@@ -221,11 +220,11 @@ final class Mips10000Tests: XCTestCase {
          ]
          */
         
-        //        try verifyProgram(
-        //            saveOutputInLog: "test1output.json",
-        //            programFile: "test1.json",
-        //            oracleFile: "result1.json"
-        //        )
+        try verifyProgram(
+            saveOutputInLog: "test1output.json",
+            programFile: "test1.json",
+            oracleFile: "result1.json"
+        )
     }
     //
     //    func testTestProgram2() throws {
@@ -236,13 +235,14 @@ final class Mips10000Tests: XCTestCase {
     //        )
     //    }
     //
-    //    func testTestProgram3() throws {
-    //        try verifyProgram(
-    //            saveOutputInLog: "test3output.json",
-    //            programFile: "test3.json",
-    //            oracleFile: "result3.json"
-    //        )
-    //    }
+    
+//    func testTestProgram3() throws {
+//        try verifyProgram(
+//            saveOutputInLog: "test3output.json",
+//            programFile: "test3.json",
+//            oracleFile: "result3.json"
+//        )
+//    }
     
     private func verifyProgram(saveOutputInLog log: String, programFile: String, oracleFile: String) throws {
         // Run simulation
