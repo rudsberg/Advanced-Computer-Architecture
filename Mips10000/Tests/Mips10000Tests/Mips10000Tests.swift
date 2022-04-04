@@ -4,14 +4,14 @@ import class Foundation.Bundle
 
 final class Mips10000Tests: XCTestCase {
     private let fileIO = FileIOController()
-
+    
     func testStartupState() throws {
         // Write initial state
         let initialState = State()
         try Logger().updateLog(with: initialState, documentName: "test_startup_state.json", deleteExistingFile: true)
         
         let trueInitialState = try fileIO.read([State].self, documentName: "test_result.json").first!
-    
+        
         checkState(state: initialState, comparedTo: trueInitialState)
     }
     
@@ -79,35 +79,76 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertNil(res)
     }
     
-    func testException() throws {
-        // Exception program
+    func testMulProgram() throws {
         /*
          [
-             "addi x0 x1 10",   -- load 10 into x0
-             "addi x1 x2 3",    -- load 3 into x1
-             "mulu x2 x0 x1",   -- x2 <- 10 * 3
-             "divu x0 x1 x13",  -- Exception
-             "addi x0 x5 20",   -- These adds should not be executed (from PC=4)
-             "addi x1 x5 21",
-             "addi x2 x5 22",
+             "addi x0 x0 2",    -- x0 <- 2
+             "addi x1 x1 3",    -- x1 <- 3
+             "mulu x2 x0 x1"    -- x2 <- 2*3
+         ]
+         */
+        let logFile = "result5-simple-mul.json"
+        let config = RunConfig(programFile: "test5-simple-mul.json", logFile: logFile, runUpToCycle: nil)
+        try App(config: config).run()
+        let producedStates = try fileIO.read([State].self, documentName: logFile)
+        
+        // Cycle 3 mulu should be waiting in the Integer Queue for the two add instructions
+        let cycle3 = producedStates[3]
+        var mulInstr = cycle3.IntegerQueue.first
+        XCTAssertEqual(cycle3.IntegerQueue.count, 1)
+        XCTAssertEqual(mulInstr?.OpAIsReady, false)
+        XCTAssertEqual(mulInstr?.OpBIsReady, false)
+        XCTAssertEqual(mulInstr?.OpCode, InstructionType.mulu.rawValue)
+        
+        // Same for cycle 4
+        let cycle4 = producedStates[4]
+        mulInstr = cycle4.IntegerQueue.first
+        XCTAssertEqual(cycle4.IntegerQueue.count, 1)
+        XCTAssertEqual(mulInstr?.OpAIsReady, false)
+        XCTAssertEqual(mulInstr?.OpBIsReady, false)
+        XCTAssertEqual(mulInstr?.OpCode, InstructionType.mulu.rawValue)
+        
+        // Cycle 5 now should it be processed
+        let cycle5 = producedStates[4]
+        XCTAssertEqual(cycle5.IntegerQueue.count, 0)
+        
+        // Verify last state
+        let lastState = producedStates.last!
+        XCTAssertEqual(lastState.RegisterMapTable[0], 2)
+        XCTAssertEqual(lastState.RegisterMapTable[1], 3)
+        XCTAssertEqual(lastState.RegisterMapTable[2], 2*3)
+    }
+    
+    func testException() throws {
+        // Exception program
+        // TODO: mul verkar inte spara 30 i x2!
+        /*
+         [
+         "addi x0 x1 10",   -- load 10 into x0
+         "addi x1 x2 3",    -- load 3 into x1
+         "mulu x2 x0 x1",   -- x2 <- 10 * 3
+         "divu x0 x1 x13",  -- Exception
+         "addi x0 x5 20",   -- These adds should not be executed (from PC=4)
+         "addi x1 x5 21",
+         "addi x2 x5 22",
          ]
          */
         
         // Run program
-//        let logFile = "result4.json"
-//        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
-//        try App(config: config).run()
-//        let producedStates = try fileIO.read([State].self, documentName: logFile)
-//        
-//        // Verify what we know must be true
-//        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
-//        let lastState = producedStates.last!
-//        XCTAssertEqual(lastState.PhysicalRegisterFile[0], 10)
-//        XCTAssertEqual(lastState.PhysicalRegisterFile[1], 3)
-//        XCTAssertEqual(lastState.PhysicalRegisterFile[2], 30)
-//        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
-//        XCTAssert(producedStates.contains(where: { $0.Exception && $0.ExceptionPC == 65536 }))
-//        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
+        //        let logFile = "result4.json"
+        //        let config = RunConfig(programFile: "test4.json", logFile: logFile, runUpToCycle: nil)
+        //        try App(config: config).run()
+        //        let producedStates = try fileIO.read([State].self, documentName: logFile)
+        //
+        //        // Verify what we know must be true
+        //        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
+        //        let lastState = producedStates.last!
+        //        XCTAssertEqual(lastState.PhysicalRegisterFile[0], 10)
+        //        XCTAssertEqual(lastState.PhysicalRegisterFile[1], 3)
+        //        XCTAssertEqual(lastState.PhysicalRegisterFile[2], 30)
+        //        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
+        //        XCTAssert(producedStates.contains(where: { $0.Exception && $0.ExceptionPC == 65536 }))
+        //        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
     }
     
     func testTestProgram() throws {
@@ -118,29 +159,29 @@ final class Mips10000Tests: XCTestCase {
         )
     }
     
-//    func testTestProgram1() throws {
-//        try verifyProgram(
-//            saveOutputInLog: "test1output.json",
-//            programFile: "test1.json",
-//            oracleFile: "result1.json"
-//        )
-//    }
-//
-//    func testTestProgram2() throws {
-//        try verifyProgram(
-//            saveOutputInLog: "test2output.json",
-//            programFile: "test2.json",
-//            oracleFile: "result2.json"
-//        )
-//    }
-//
-//    func testTestProgram3() throws {
-//        try verifyProgram(
-//            saveOutputInLog: "test3output.json",
-//            programFile: "test3.json",
-//            oracleFile: "result3.json"
-//        )
-//    }
+    //    func testTestProgram1() throws {
+    //        try verifyProgram(
+    //            saveOutputInLog: "test1output.json",
+    //            programFile: "test1.json",
+    //            oracleFile: "result1.json"
+    //        )
+    //    }
+    //
+    //    func testTestProgram2() throws {
+    //        try verifyProgram(
+    //            saveOutputInLog: "test2output.json",
+    //            programFile: "test2.json",
+    //            oracleFile: "result2.json"
+    //        )
+    //    }
+    //
+    //    func testTestProgram3() throws {
+    //        try verifyProgram(
+    //            saveOutputInLog: "test3output.json",
+    //            programFile: "test3.json",
+    //            oracleFile: "result3.json"
+    //        )
+    //    }
     
     private func verifyProgram(saveOutputInLog log: String, programFile: String, oracleFile: String) throws {
         // Run simulation
@@ -155,7 +196,7 @@ final class Mips10000Tests: XCTestCase {
         
         // Num produced states should be equal to num oracle states
         XCTAssertEqual(producedStates.count, oracle.count)
-
+        
         // Verify cycle per cycle
         var cycle = 0
         zip(producedStates, oracle).forEach {
@@ -181,17 +222,17 @@ final class Mips10000Tests: XCTestCase {
         XCTAssertEqual(state.RegisterMapTable, trueState.RegisterMapTable)
         XCTAssertEqual(state.PhysicalRegisterFile, trueState.PhysicalRegisterFile)
     }
-
+    
     /// Returns path to the built products directory.
     var productsDirectory: URL {
-      #if os(macOS)
+#if os(macOS)
         for bundle in Bundle.allBundles where bundle.bundlePath.hasSuffix(".xctest") {
             return bundle.bundleURL.deletingLastPathComponent()
         }
         fatalError("couldn't find the products directory")
-      #else
+#else
         return Bundle.main.bundleURL
-      #endif
+#endif
     }
 }
 

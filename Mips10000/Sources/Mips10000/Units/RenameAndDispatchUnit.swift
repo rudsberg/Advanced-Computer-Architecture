@@ -38,7 +38,7 @@ struct RenameAndDispatchUnit {
         }
         
         // Update the physical register file as well as the Busy Bit Table
-        state.forwardingPaths.forEach {
+        state.forwardingPaths.filter{ $0.value != nil }.forEach {
             state.BusyBitTable[$0.dest] = false
             state.PhysicalRegisterFile[$0.dest] = $0.value!
         }

@@ -17,7 +17,8 @@ struct IssueUnit {
         var state = state
         
         // Update IQ based on forwarding paths
-        state.forwardingPaths.enumerated().forEach { (i, fp) in
+        // TODO: unsure about filtering value
+        state.forwardingPaths.filter{ $0.value != nil }.enumerated().forEach { (i, fp) in
             // Check all opA and update
             if let indexUpdate = state.IntegerQueue.firstIndex(where: { $0.OpARegTag == fp.dest }) {
                 state.IntegerQueue[indexUpdate].OpAValue = fp.value!

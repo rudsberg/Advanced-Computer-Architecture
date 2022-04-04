@@ -15,19 +15,31 @@ struct CommitUnit {
         var Exception: Bool
         var PC: Int
         var ExceptionPC: Int
+        // For rollback & FreeList
+        var RegisterMapTable: [Int]
+        var BusyBitTable: [Bool]
     }
     
     func execute(state: State) -> Result {
+        guard !state.Exception else {
+            return exceptionRecovery(state: state)
+        }
+        
         var result = Result(
             ActiveList: state.ActiveList,
             FreeList: state.FreeList,
             Exception: state.Exception,
             PC: state.PC,
-            ExceptionPC: state.ExceptionPC
+            ExceptionPC: state.ExceptionPC,
+            RegisterMapTable: state.RegisterMapTable,
+            BusyBitTable: state.BusyBitTable
         )
         
+        // Use list in 'program order', i.e. low to high pc
+        let activeList = state.ActiveList.sorted(by: { $0.PC < $1.PC })
+        
         // Mark done or exception if existing in forwarding path
-        state.ActiveList.enumerated().forEach { (i, item) in
+        activeList.enumerated().forEach { (i, item) in
             if let matchingForwardingPath = state.forwardingPaths.first(where: { $0.instructionPC == item.PC }) {
                 result.ActiveList[i].Exception = matchingForwardingPath.exception
                 result.ActiveList[i].Done = true
@@ -37,7 +49,7 @@ struct CommitUnit {
         // TODO: Retiring or rolling back instructions
         
         // Find instructions to retire/commit - crucially using 'state' and not 'result' due to timing
-        let intructionsToCommit = state.ActiveList.enumerated().prefix(while: { (i, item) in
+        let intructionsToCommit = activeList.enumerated().prefix(while: { (i, item) in
             // First 4 and done
             let passes = i < 4 && item.Done
             
@@ -55,7 +67,7 @@ struct CommitUnit {
         
         // If exception found, next instruction after 'intructionsToCommit' will be the exception
         if (result.Exception) {
-            let exceptionInstruction = state.ActiveList[intructionsToCommit.count]
+            let exceptionInstruction = activeList[intructionsToCommit.count]
             assert(exceptionInstruction.Exception)
         }
         
@@ -68,5 +80,19 @@ struct CommitUnit {
         result.FreeList.append(contentsOf: intructionsToCommit.map { $0.LogicalDestination })
         
         return result
+    }
+    
+    private func exceptionRecovery(state: State) -> Result {
+        // Pick up to four instructions at bottom of reversed program order (highest PCs, excluding exception)
+        var instructions = Array(state.ActiveList
+            .filter { !$0.Exception }
+            .sorted(by: { $0.PC > $1.PC }))
+        instructions = Array(instructions.prefix(upTo: min(4, instructions.count)))
+        
+        // Set Register Map Table values to be the previous values
+        instructions.forEach { instruction in
+            
+        }
+        fatalError("Not implemented")
     }
 }

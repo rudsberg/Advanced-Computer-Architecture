@@ -128,9 +128,9 @@ struct App {
 }
 
 let config = RunConfig(
-    programFile: "test.json",
-    logFile: "output.json",
-    runUpToCycle: nil
+    programFile: "test4-no_exception.json",
+    logFile: "test4-no_exception_result.json",
+    runUpToCycle: 10
 )
 
 try App(config: config).run()
