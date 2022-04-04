@@ -202,6 +202,28 @@ final class Mips10000Tests: XCTestCase {
         XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
     }
     
+    func testCommitUnit() {
+        let cu = CommitUnit()
+        var state = State()
+        state.ActiveList = [
+            .init(Done: true, Exception: false, LogicalDestination: 0, OldDestination: 0, PC: 0),
+            .init(Done: true, Exception: true, LogicalDestination: 1, OldDestination: 1, PC: 1),
+            .init(Done: true, Exception: true, LogicalDestination: 2, OldDestination: 2, PC: 2),
+        ]
+        
+        var res = cu.execute(state: state)
+        XCTAssertEqual(res.Exception, true)
+        XCTAssertEqual(res.ActiveList.count, 2)
+        XCTAssertEqual(res.ActiveList.first!.PC, 1)
+        XCTAssertEqual(res.ActiveList[1].PC, 2)
+        state.Exception = res.Exception
+        state.ActiveList = res.ActiveList
+        
+        res = cu.execute(state: state)
+        XCTAssertEqual(res.Exception, true)
+        XCTAssertEqual(res.ActiveList.count, 0)
+    }
+    
     func testTestProgram() throws {
         try verifyProgram(
             saveOutputInLog: "testTestProgram.json",
@@ -238,22 +260,22 @@ final class Mips10000Tests: XCTestCase {
              "remu x1, x2, x3"
          ]
          */
-        
+
         try verifyProgram(
-            saveOutputInLog: "test2output.json",
+            saveOutputInLog: "test2log.json",
             programFile: "test2.json",
             oracleFile: "result2.json"
         )
     }
 
     
-//    func testTestProgram3() throws {
-//        try verifyProgram(
-//            saveOutputInLog: "test3output.json",
-//            programFile: "test3.json",
-//            oracleFile: "result3.json"
-//        )
-//    }
+    func testTestProgram3() throws {
+        try verifyProgram(
+            saveOutputInLog: "test3output.json",
+            programFile: "test3.json",
+            oracleFile: "result3.json"
+        )
+    }
     
     private func verifyProgram(saveOutputInLog log: String, programFile: String, oracleFile: String) throws {
         // Run simulation

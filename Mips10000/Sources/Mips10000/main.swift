@@ -36,6 +36,33 @@ struct App {
                 break
             }
             
+            // MARK: - Exception Recovery - part of the Commit Stage
+            if (state.Exception) {
+                // Check if recovery is completed TODO: not sure if this will produce correct logs
+                if (state.ActiveList.isEmpty) {
+                    return
+                }
+                
+                // Record PC of instruction with the exception, must be top of the active list
+                state.ExceptionPC = state.ActiveList.sorted(by: { $0.PC < $1.PC }).first!.PC
+                
+                // Notify fetch and decode unit and record changes
+                let fadExceptionUpdates = fetchAndDecodeUnit.onException(state: state)
+                state.DecodedPCs = fadExceptionUpdates.DecodedPCAction(state.DecodedPCs)
+                state.PC = fadExceptionUpdates.PC
+                
+                // Reset the integer queue and execution stage
+                state.IntegerQueue.removeAll()
+                state.pipelineRegister3.removeAll()
+                ALUs.enumerated().forEach { (i, _) in ALUs[i].clearCurrentInstruction() }
+                
+                let recovery = commitUnit.execute(state: state)
+                state.ActiveList = recovery.ActiveList
+                state.BusyBitTable = recovery.BusyBitTable
+                state.RegisterMapTable = recovery.RegisterMapTable
+                state.FreeList = recovery.FreeList
+            }
+            
             // MARK: - Propagate
             // Make copy of current state which will be consumed & updated by units EXCEPT
             // those units that can access data structures that can be updated and read in the same
@@ -73,9 +100,7 @@ struct App {
             oldStatePlusImmediateChanges.ActiveList = state.ActiveList
             oldStatePlusImmediateChanges.FreeList = state.FreeList
             let commitUpdates = commitUnit.execute(state: oldStatePlusImmediateChanges)
-            
-            // TODO: stop simulation for exception
-            
+                        
             // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
             state.programMemory = fadUpdates.programMemory
             state.PC = fadUpdates.PC
@@ -89,34 +114,6 @@ struct App {
             state.FreeList = commitUpdates.FreeList
             state.ActiveList = commitUpdates.ActiveList
             state.Exception = commitUpdates.Exception
-            
-            // MARK: - Exception Recovery - part of the Commit Stage (TODO: refactor into Commit Unit)
-            if (state.Exception) {
-                // Check if recovery is completed TODO: not sure if this will produce correct logs
-                if (state.ActiveList.isEmpty) {
-                    return
-                }
-                
-                // Record PC of instruction with the exception
-                state.ExceptionPC = commitUpdates.ExceptionPC
-                
-                // Notify fetch and decode unit and record changes
-                let fadExceptionUpdates = fetchAndDecodeUnit.onException(state: state)
-                state.DecodedPCs = fadExceptionUpdates.DecodedPCAction(state.DecodedPCs)
-                state.PC = fadExceptionUpdates.PC
-                
-                // Reset the integer queue and execution stage
-                state.IntegerQueue.removeAll()
-                state.pipelineRegister3.removeAll()
-                ALUs.enumerated().forEach { (i, _) in ALUs[i].clearCurrentInstruction() }
-                
-                let recovery = commitUnit.execute(state: state)
-                state.ActiveList = recovery.ActiveList
-                state.BusyBitTable = recovery.BusyBitTable
-                state.RegisterMapTable = recovery.RegisterMapTable
-                state.FreeList = recovery.FreeList
-            }
-                        
             
             // MARK: - Dump the state
             try Logger().updateLog(with: state, documentName: config.logFile)
@@ -134,7 +131,7 @@ struct App {
 
 let config = RunConfig(
     programFile: "test2.json",
-    logFile: "result2.json",
+    logFile: "test2baby.json",
     runUpToCycle: 100
 )
 

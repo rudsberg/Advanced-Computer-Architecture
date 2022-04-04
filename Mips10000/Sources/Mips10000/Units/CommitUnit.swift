@@ -46,30 +46,30 @@ struct CommitUnit {
             }
         }
         
-        // TODO: Retiring or rolling back instructions
+        let intructionsToCommit = activeList.prefix(upTo: min(4, activeList.count)).prefix(while: { $0.Done && !$0.Exception })
         
+        // If head of list is exception enter recovery next cycle
+        if (intructionsToCommit.count < result.ActiveList.count && activeList[intructionsToCommit.count].Exception) {
+            print("EXCEPTION FOUND!!!!!!")
+            result.Exception = true
+        }
+                
         // Find instructions to retire/commit - crucially using 'state' and not 'result' due to timing
-        let intructionsToCommit = activeList.enumerated().prefix(while: { (i, item) in
-            // First 4 and done
-            let passes = i < 4 && item.Done
-            
-            // Check if exception
-            let exception = item.Exception
-            if (exception) {
-                result.Exception = true
-                result.ExceptionPC = item.PC
-            }
-            
-            return passes && !exception
-        }).map { $0.element }
+//        let intructionsToCommit = activeList.enumerated().prefix(while: { (i, item) in
+//            // First 4 and done
+//            let passes = i < 4 && item.Done
+//
+//            // Check if exception
+//            let exception = item.Exception
+//            if (exception) {
+//                result.Exception = true
+//                result.ExceptionPC = item.PC
+//            }
+//
+//            return passes && !exception
+//        }).map { $0.element }
         
         assert(intructionsToCommit.count <= 4)
-        
-        // If exception found, next instruction after 'intructionsToCommit' will be the exception
-        if (result.Exception) {
-            let exceptionInstruction = activeList[intructionsToCommit.count]
-            assert(exceptionInstruction.Exception)
-        }
         
         // Remove instructions from active list that will be commited
         intructionsToCommit.forEach { instruction in
