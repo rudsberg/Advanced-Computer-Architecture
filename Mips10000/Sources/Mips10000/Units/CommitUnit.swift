@@ -40,7 +40,7 @@ struct CommitUnit {
         
         // Mark done or exception if existing in forwarding path
         activeList.enumerated().forEach { (i, item) in
-            if let matchingForwardingPath = state.forwardingPaths.first(where: { $0.instructionPC == item.PC }) {
+            if let matchingForwardingPath = state.forwardingPaths.first(where: { $0.iq.PC == item.PC }) {
                 result.ActiveList[i].Exception = matchingForwardingPath.exception
                 result.ActiveList[i].Done = true
             }

@@ -52,9 +52,8 @@ struct App {
                 }
             }
             // Broadcast alu result on forwarding paths
-            state.forwardingPaths = aluResults
-                .map { .init(dest: $0.iq.DestRegister, value: $0.computedValue, exception: $0.exception, instructionPC: $0.iq.PC) }
-            
+            state.forwardingPaths = aluResults.map { .init(value: $0.computedValue, exception: $0.exception, iq: $0.iq) }
+
             let oldState = state
             let fadUpdates = fetchAndDecodeUnit.fetchAndDecode(
                 state: oldState,

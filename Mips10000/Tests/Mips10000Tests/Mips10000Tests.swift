@@ -82,9 +82,9 @@ final class Mips10000Tests: XCTestCase {
     func testMulProgram() throws {
         /*
          [
-             "addi x0 x0 2",    -- x0 <- 2
-             "addi x1 x1 3",    -- x1 <- 3
-             "mulu x2 x0 x1"    -- x2 <- 2*3, RAW dependency
+         "addi x0 x0 2",    -- x0 <- 2
+         "addi x1 x1 3",    -- x1 <- 3
+         "mulu x2 x0 x1"    -- x2 <- 2*3, RAW dependency
          ]
          */
         let logFile = "result5-simple-mul.json"
@@ -159,13 +159,22 @@ final class Mips10000Tests: XCTestCase {
         )
     }
     
-    //    func testTestProgram1() throws {
-    //        try verifyProgram(
-    //            saveOutputInLog: "test1output.json",
-    //            programFile: "test1.json",
-    //            oracleFile: "result1.json"
-    //        )
-    //    }
+    func testTestProgram1() throws {
+        /*
+         [
+             "addi x1, x0, 1",
+             "addi x2, x1, 1",
+             "add  x1, x2, x1",
+             "mulu x0, x0, x1"
+         ]
+         */
+        
+        try verifyProgram(
+            saveOutputInLog: "test1output.json",
+            programFile: "test1.json",
+            oracleFile: "result1.json"
+        )
+    }
     //
     //    func testTestProgram2() throws {
     //        try verifyProgram(

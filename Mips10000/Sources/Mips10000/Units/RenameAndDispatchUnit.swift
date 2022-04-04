@@ -39,8 +39,8 @@ struct RenameAndDispatchUnit {
         
         // Update the physical register file as well as the Busy Bit Table
         state.forwardingPaths.filter{ $0.value != nil }.forEach {
-            state.BusyBitTable[$0.dest] = false
-            state.PhysicalRegisterFile[$0.dest] = $0.value!
+            state.BusyBitTable[$0.iq.DestRegister] = false
+            state.PhysicalRegisterFile[$0.iq.DestRegister] = $0.value!
         }
         
         // Retrive max amount of instructions
@@ -117,7 +117,7 @@ struct RenameAndDispatchUnit {
             return state.PhysicalRegisterFile[physical]
         }
         
-        if let fp = state.forwardingPaths.first(where: { $0.dest == operand }) {
+        if let fp = state.forwardingPaths.first(where: { $0.iq.DestRegister == operand }) {
             return fp.value
         }
         

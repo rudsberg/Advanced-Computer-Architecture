@@ -104,16 +104,9 @@ struct IntegerQueueItem: Codable, Equatable {
 }
 
 struct ForwardingPath {
-    let dest: Int
     let value: Int?
     let exception: Bool
-    let instructionPC: Int
-}
-
-extension Sequence where Element == ForwardingPath {
-    func contains(valueForRegister register: Register) -> Bool {
-        contains(where: { $0.dest == register })
-    }
+    let iq: IntegerQueueItem
 }
 
 struct ALUItem {
