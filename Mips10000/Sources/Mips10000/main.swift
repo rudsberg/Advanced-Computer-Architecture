@@ -46,7 +46,7 @@ struct App {
                 }
                 
                 // Update ExceptionPC (if not done already) - must be top of the active list
-                if (state.ExceptionPC != 0) {
+                if (state.ExceptionPC == 0) {
                     let exceptionInstruction = state.ActiveList.sorted(by: { $0.PC < $1.PC }).first!
                     assert(exceptionInstruction.Exception)
                     state.ExceptionPC = exceptionInstruction.PC
@@ -96,15 +96,6 @@ struct App {
             oldStatePlusImmediateChanges.ActiveList = state.ActiveList
             oldStatePlusImmediateChanges.FreeList = state.FreeList
             let commitUpdates = commitUnit.execute(state: oldStatePlusImmediateChanges)
-            
-            // Check for exception, Fetch And Decode should be notified same cycle to update PC and clear DIR
-            if (commitUpdates.Exception) {
-                state.Exception = true
-
-                let fadExceptionUpdates = fetchAndDecodeUnit.onException(state: state)
-                state.DecodedPCs = fadExceptionUpdates.DecodedPCAction(state.DecodedPCs)
-                state.PC = fadExceptionUpdates.PC
-            }
                         
             // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
             state.programMemory = fadUpdates.programMemory
@@ -118,6 +109,15 @@ struct App {
             state.pipelineRegister3 = iUpdates.issuedInstructions.map { ALUItem(iq: $0) }
             state.FreeList = commitUpdates.FreeList
             state.ActiveList = commitUpdates.ActiveList
+            
+            // Check for exception, Fetch And Decode should be notified same cycle to update PC and clear DIR
+            if (commitUpdates.Exception) {
+                state.Exception = true
+
+                let fadExceptionUpdates = fetchAndDecodeUnit.onException(state: state)
+                state.DecodedPCs = fadExceptionUpdates.DecodedPCAction(state.DecodedPCs)
+                state.PC = fadExceptionUpdates.PC
+            }
             
             // MARK: - Dump the state
             try Logger().updateLog(with: state, documentName: config.logFile)

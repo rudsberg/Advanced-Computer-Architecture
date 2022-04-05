@@ -199,7 +199,8 @@ final class Mips10000Tests: XCTestCase {
 //        XCTAssertEqual(lastState.PhysicalRegisterFile.reduce(0, +), 43)
         XCTAssert(producedStates.contains(where: { $0.Exception }))
         XCTAssert(producedStates.contains(where: { $0.PC == 65536 }))
-        XCTAssert(producedStates.contains(where: { $0.ExceptionPC == 3 }))
+        XCTAssert(producedStates.contains(where: { $0.ExceptionPC != 0 }))
+        XCTAssertEqual(producedStates.first(where: { $0.ExceptionPC != 0 })?.ExceptionPC, 3)
     }
     
     func testCommitUnit() {
@@ -261,11 +262,11 @@ final class Mips10000Tests: XCTestCase {
          ]
          */
 
-//        try verifyProgram(
-//            saveOutputInLog: "test2log.json",
-//            programFile: "test2.json",
-//            oracleFile: "result2.json"
-//        )
+        try verifyProgram(
+            saveOutputInLog: "test2log.json",
+            programFile: "test2.json",
+            oracleFile: "result2.json"
+        )
     }
 //
 //    

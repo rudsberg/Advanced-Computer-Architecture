@@ -66,10 +66,11 @@ struct RenameAndDispatchUnit {
             let rsItem = IntegerQueueItem(
                 DestRegister: physicalRegister,
                 OpAIsReady: opAValue != nil,
-                OpARegTag: state.RegisterMapTable[i.opA], // TODO: 'when value of operand A is available within integer queue we don't care of this field'
+                OpARegTag: opAValue == nil ? state.RegisterMapTable[i.opA] : 0, // When value of operand A is available use 0
                 OpAValue: opAValue ?? 0,
                 OpBIsReady: opBValue != nil,
-                OpBRegTag: i.opBImmediateValue != nil ? 0 : state.RegisterMapTable[i.opB], // Fallback to 0 for immediate value to conform to test suite
+                OpBRegTag: i.opBImmediateValue != nil ? 0 :
+                    opBValue == nil ? state.RegisterMapTable[i.opB] : 0,
                 OpBValue: opBValue ?? 0,
                 OpCode: i.type.rawValue,
                 PC: i.pc
