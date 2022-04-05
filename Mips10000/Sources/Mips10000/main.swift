@@ -23,7 +23,7 @@ struct App {
         try Logger().updateLog(with: state, documentName: config.logFile, deleteExistingFile: true)
 
         // Setup units
-        let fetchAndDecodeUnit = FetchAndDecodeUnit()
+        var fetchAndDecodeUnit = FetchAndDecodeUnit()
         let renameAndDispatchUnit = RenameAndDispatchUnit()
         let issueUnit = IssueUnit()
         var ALUs = (0...4).map { ALU(id: $0) }
@@ -36,26 +36,28 @@ struct App {
                 break
             }
             
+            print("\n======= Starting cycle \(cycleCounter)")
+            
             // MARK: - Exception Recovery - part of the Commit Stage
             if (state.Exception) {
-                // Check if recovery is completed TODO: not sure if this will produce correct logs
+                // Check if rollback & recovery is completed
                 if (state.ActiveList.isEmpty) {
                     return
                 }
                 
-                // Record PC of instruction with the exception, must be top of the active list
-                state.ExceptionPC = state.ActiveList.sorted(by: { $0.PC < $1.PC }).first!.PC
-                
-                // Notify fetch and decode unit and record changes
-                let fadExceptionUpdates = fetchAndDecodeUnit.onException(state: state)
-                state.DecodedPCs = fadExceptionUpdates.DecodedPCAction(state.DecodedPCs)
-                state.PC = fadExceptionUpdates.PC
+                // Update ExceptionPC (if not done already) - must be top of the active list
+                if (state.ExceptionPC != 0) {
+                    let exceptionInstruction = state.ActiveList.sorted(by: { $0.PC < $1.PC }).first!
+                    assert(exceptionInstruction.Exception)
+                    state.ExceptionPC = exceptionInstruction.PC
+                }
                 
                 // Reset the integer queue and execution stage
                 state.IntegerQueue.removeAll()
                 state.pipelineRegister3.removeAll()
                 ALUs.enumerated().forEach { (i, _) in ALUs[i].clearCurrentInstruction() }
                 
+                // Execute CU which will enter recovery mode
                 let recovery = commitUnit.execute(state: state)
                 state.ActiveList = recovery.ActiveList
                 state.BusyBitTable = recovery.BusyBitTable
@@ -64,12 +66,6 @@ struct App {
             }
             
             // MARK: - Propagate
-            // Make copy of current state which will be consumed & updated by units EXCEPT
-            // those units that can access data structures that can be updated and read in the same
-            // cycle -> Integer Queue, Active List, Free List
-            print("\n======= Starting cycle \(cycleCounter)")
-            // Unit READS old state, UPDATES real state
-            
             // Run ALU action first so forwarding paths are broadcasted before other units execute
             var aluResults = [ALUItem]()
             ALUs.enumerated().forEach { (i, alu) in
@@ -100,6 +96,15 @@ struct App {
             oldStatePlusImmediateChanges.ActiveList = state.ActiveList
             oldStatePlusImmediateChanges.FreeList = state.FreeList
             let commitUpdates = commitUnit.execute(state: oldStatePlusImmediateChanges)
+            
+            // Check for exception, Fetch And Decode should be notified same cycle to update PC and clear DIR
+            if (commitUpdates.Exception) {
+                state.Exception = true
+
+                let fadExceptionUpdates = fetchAndDecodeUnit.onException(state: state)
+                state.DecodedPCs = fadExceptionUpdates.DecodedPCAction(state.DecodedPCs)
+                state.PC = fadExceptionUpdates.PC
+            }
                         
             // MARK: - Latch -> submit all changes that are not immediate (eg integer queue)
             state.programMemory = fadUpdates.programMemory
@@ -113,7 +118,6 @@ struct App {
             state.pipelineRegister3 = iUpdates.issuedInstructions.map { ALUItem(iq: $0) }
             state.FreeList = commitUpdates.FreeList
             state.ActiveList = commitUpdates.ActiveList
-            state.Exception = commitUpdates.Exception
             
             // MARK: - Dump the state
             try Logger().updateLog(with: state, documentName: config.logFile)

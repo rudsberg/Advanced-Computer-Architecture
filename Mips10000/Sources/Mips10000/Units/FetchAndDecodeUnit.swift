@@ -8,15 +8,17 @@
 import Foundation
 
 struct FetchAndDecodeUnit {
+    private var inException = false
+    
     struct Updates {
         var programMemory: [Instruction]
         var DecodedPCAction: ([Int]) -> [Int]
         var PC: Int
     }
-    
+        
     func fetchAndDecode(state: State, backPressure: Bool) -> Updates {
         var state = state
-        guard !backPressure, !state.Exception else {
+        guard !backPressure, !inException else {
             return Updates(programMemory: state.programMemory, DecodedPCAction: { $0 }, PC: state.PC)
         }
         
@@ -40,11 +42,13 @@ struct FetchAndDecodeUnit {
         )
     }
     
-    func onException(state: State) -> Updates {
+    mutating func onException(state: State) -> Updates {
         var updates = Updates(programMemory: state.programMemory, DecodedPCAction: { $0 }, PC: state.PC)
         
+        // Halt all future fetching
+        inException = true
+        
         // Set PC to 0x10000
-        // TODO: ask TA if OK to do like this with hex
         updates.PC = 65536
         
         // Clear DIR register

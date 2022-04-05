@@ -21,9 +21,13 @@ struct CommitUnit {
     }
     
     func execute(state: State) -> Result {
+        var state = state
         guard !state.Exception else {
             return exceptionRecovery(state: state)
         }
+        
+        // Use active list in 'program order', i.e. low to high pc
+        state.ActiveList = state.ActiveList.sorted(by: { $0.PC < $1.PC })
         
         var result = Result(
             ActiveList: state.ActiveList,
@@ -34,52 +38,37 @@ struct CommitUnit {
             RegisterMapTable: state.RegisterMapTable,
             BusyBitTable: state.BusyBitTable
         )
-        
-        // Use list in 'program order', i.e. low to high pc
-        let activeList = state.ActiveList.sorted(by: { $0.PC < $1.PC })
-        
+                
         // Mark done or exception if existing in forwarding path
-        activeList.enumerated().forEach { (i, item) in
+        state.ActiveList.enumerated().forEach { (i, item) in
             if let matchingForwardingPath = state.forwardingPaths.first(where: { $0.iq.PC == item.PC }) {
                 result.ActiveList[i].Exception = matchingForwardingPath.exception
                 result.ActiveList[i].Done = true
             }
         }
         
-        let intructionsToCommit = activeList.prefix(upTo: min(4, activeList.count)).prefix(while: { $0.Done && !$0.Exception })
+        // At most 4 that are done and not marked as exception
+        let intructionsToCommit = state.ActiveList
+            .prefix(upTo: min(4, state.ActiveList.count))
+            .prefix(while: {
+                if ($0.Exception) {
+                    print("CU – Exception detected")
+                    result.Exception = true
+                    return false
+                } else {
+                    return $0.Done
+                }
+            })
         
-        // If head of list is exception enter recovery next cycle
-        if (intructionsToCommit.count < result.ActiveList.count && activeList[intructionsToCommit.count].Exception) {
-            print("EXCEPTION FOUND!!!!!!")
-            result.Exception = true
-        }
-                
-        // Find instructions to retire/commit - crucially using 'state' and not 'result' due to timing
-//        let intructionsToCommit = activeList.enumerated().prefix(while: { (i, item) in
-//            // First 4 and done
-//            let passes = i < 4 && item.Done
-//
-//            // Check if exception
-//            let exception = item.Exception
-//            if (exception) {
-//                result.Exception = true
-//                result.ExceptionPC = item.PC
-//            }
-//
-//            return passes && !exception
-//        }).map { $0.element }
-        
-        assert(intructionsToCommit.count <= 4)
+        assert(intructionsToCommit.count <= 4 && intructionsToCommit.allSatisfy { $0.Done })
         
         // Remove instructions from active list that will be commited
-        intructionsToCommit.forEach { instruction in
-            result.ActiveList = result.ActiveList.filter { $0.PC != instruction.PC }
-        }
+        result.ActiveList = Array(result.ActiveList.dropFirst(intructionsToCommit.count))
         
         print("CU – commiting \(intructionsToCommit.map { String($0.PC) }.split(separator: ", "))")
         
         // Free physical registers
-        result.FreeList.append(contentsOf: intructionsToCommit.map { $0.LogicalDestination })
+        result.FreeList.append(contentsOf: intructionsToCommit.map { $0.OldDestination })
         
         return result
     }
@@ -89,7 +78,7 @@ struct CommitUnit {
         
         // Pick up to four instructions at bottom of reversed program order (highest PCs, excluding exception)
         var instructions = Array(state.ActiveList
-            .sorted(by: { $0.PC > $1.PC }))
+                                    .sorted(by: { $0.PC > $1.PC }))
         instructions = Array(instructions.prefix(upTo: min(4, instructions.count)))
         
         print("CU - exception recovery, rolling back \(instructions.count) instructions")
