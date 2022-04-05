@@ -88,11 +88,16 @@ struct CommitUnit {
             let busyBitIndexToUpdate = state.RegisterMapTable[instruction.LogicalDestination]
             result.BusyBitTable[busyBitIndexToUpdate] = false
             
+            // Add to free list
+            if (instruction.Exception) {
+                // Add what the physical register is currently mapping to
+                result.FreeList.append(result.RegisterMapTable[instruction.LogicalDestination])
+            } else {
+                result.FreeList.append(instruction.OldDestination)
+            }
+            
             // Update register map table
             result.RegisterMapTable[instruction.LogicalDestination] = instruction.OldDestination
-            
-            // Add to free list
-            result.FreeList.append(instruction.OldDestination)
         }
         
         // Drop selected items from active list
