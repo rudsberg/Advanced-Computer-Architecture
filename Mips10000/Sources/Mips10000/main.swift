@@ -40,11 +40,6 @@ struct App {
             
             // MARK: - Exception Recovery - part of the Commit Stage
             if (state.Exception) {
-                // Check if rollback & recovery is completed
-                if (state.ActiveList.isEmpty) {
-                    return
-                }
-                
                 // Reset the integer queue and execution stage
                 state.IntegerQueue.removeAll()
                 state.pipelineRegister3.removeAll()
@@ -120,17 +115,25 @@ struct App {
                 }
             }
             
-            // MARK: - Dump the state
-            try Logger().updateLog(with: state, documentName: config.logFile)
-            
-            // For debugging purposes
             print("======= Ending cycle \(cycleCounter)\n")
             cycleCounter += 1
-            if (cycleCounter > 100) {
-                // TODO: remove for final submission
-                fatalError("Likely an infite loop")
+            
+            // MARK: - Dump the state & exception done check
+            let log = { try Logger().updateLog(with: state, documentName: config.logFile) }
+            
+            // Check if rollback & recovery is completed, update state accordingly
+            if (state.Exception && state.ActiveList.isEmpty) {
+                // TODO: check with TA
+                state.PC = state.ExceptionPC
+                state.Exception = false
+                state.ExceptionPC = 0
+                try log()
+                return
             }
+            
+            try log()
         }
+        
     }
 }
 
