@@ -45,13 +45,6 @@ struct App {
                     return
                 }
                 
-                // Update ExceptionPC (if not done already) - must be top of the active list
-                if (state.ExceptionPC == 0) {
-                    let exceptionInstruction = state.ActiveList.sorted(by: { $0.PC < $1.PC }).first!
-                    assert(exceptionInstruction.Exception)
-                    state.ExceptionPC = exceptionInstruction.PC
-                }
-                
                 // Reset the integer queue and execution stage
                 state.IntegerQueue.removeAll()
                 state.pipelineRegister3.removeAll()
@@ -117,6 +110,14 @@ struct App {
                 let fadExceptionUpdates = fetchAndDecodeUnit.onException(state: state)
                 state.DecodedPCs = fadExceptionUpdates.DecodedPCAction(state.DecodedPCs)
                 state.PC = fadExceptionUpdates.PC
+                
+                // Update ExceptionPC (if not done already) - must be top of the active list
+                // TODO: verify with TA & ask: only need to handle 1 exception right?
+                if (state.ExceptionPC == 0) {
+                    let exceptionInstruction = state.ActiveList.sorted(by: { $0.PC < $1.PC }).first!
+                    assert(exceptionInstruction.Exception)
+                    state.ExceptionPC = exceptionInstruction.PC
+                }
             }
             
             // MARK: - Dump the state
