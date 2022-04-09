@@ -272,15 +272,6 @@ final class Mips10000Tests: XCTestCase {
             oracleFile: "result2.json"
         )
     }
-
-    
-//    func testTestProgram3() throws {
-//        try verifyProgram(
-//            saveOutputInLog: "test3output.json",
-//            programFile: "test3.json",
-//            oracleFile: "result3.json"
-//        )
-//    }
     
     private func verifyProgram(saveOutputInLog log: String, programFile: String, oracleFile: String) throws {
         // Run simulation
