@@ -123,10 +123,7 @@ struct App {
             
             // Check if rollback & recovery is completed, update state accordingly
             if (state.Exception && state.ActiveList.isEmpty) {
-                // TODO: check with TA
-                state.PC = state.ExceptionPC + 1
                 state.Exception = false
-                state.ExceptionPC = 0
                 try log()
                 return
             }
