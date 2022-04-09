@@ -195,7 +195,7 @@ final class Mips10000Tests: XCTestCase {
         let producedStates = try fileIO.read([State].self, documentName: logFile)
 
         // Verify what we know must be true
-        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 }) // TODO: right?
+        XCTAssert(producedStates.allSatisfy { $0.PC != 4 || $0.PC != 5 || $0.PC != 6 })
         let lastState = producedStates.last!
         XCTAssertEqual(lastState.PhysicalRegisterFile[32], 10)
         XCTAssertEqual(lastState.PhysicalRegisterFile[33], 3)
@@ -275,7 +275,6 @@ final class Mips10000Tests: XCTestCase {
 
     
 //    func testTestProgram3() throws {
-        // TODO: something wrong with second pass of updates, wrong from cycle 15.
 //        try verifyProgram(
 //            saveOutputInLog: "test3output.json",
 //            programFile: "test3.json",

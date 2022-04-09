@@ -17,7 +17,6 @@ struct IssueUnit {
         var state = state
         
         // Update IQ based on forwarding paths
-        // TODO: double check filtering for value here
         state.forwardingPaths.filter{ $0.value != nil }.enumerated().forEach { (i, fp) in
             state.IntegerQueue.enumerated().forEach { (i, item) in
                 if (item.OpARegTag == fp.iq.DestRegister) {

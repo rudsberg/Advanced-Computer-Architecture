@@ -74,7 +74,6 @@ struct App {
                 state: oldState,
                 program: program
             )
-            // state.IntegerQueue = radUpdates.IntegerQueue TODO: double check current update logic with TA
             state.ActiveList = radUpdates.ActiveList
             state.FreeList = radUpdates.FreeList
             let iUpdates = issueUnit.issue(state: oldState)
@@ -107,7 +106,6 @@ struct App {
                 state.PC = fadExceptionUpdates.PC
                 
                 // Update ExceptionPC (if not done already) - must be top of the active list
-                // TODO: verify with TA & ask: only need to handle 1 exception right?
                 if (state.ExceptionPC == 0) {
                     let exceptionInstruction = state.ActiveList.sorted(by: { $0.PC < $1.PC }).first!
                     assert(exceptionInstruction.Exception)

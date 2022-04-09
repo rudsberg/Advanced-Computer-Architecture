@@ -19,7 +19,6 @@ struct RenameAndDispatchUnit {
     }
     
     func backPresssure(state: State) -> Bool {
-        // TODO: unsure, "check if there are enough physical registers", always enough with 64?
         maxInstructionsRetrievable(state: state) == 0
     }
     
@@ -41,7 +40,7 @@ struct RenameAndDispatchUnit {
         state.forwardingPaths.forEach {
             state.BusyBitTable[$0.iq.DestRegister] = false
             if let value = $0.value {
-                state.PhysicalRegisterFile[$0.iq.DestRegister] = $0.value!
+                state.PhysicalRegisterFile[$0.iq.DestRegister] = value
             }
         }
         
