@@ -14,6 +14,9 @@ class FileIOController {
     static var folderPath: String?
     private var folderURL: URL {
         if let folderPath = FileIOController.folderPath {
+            if (!FileManager.default.fileExists(atPath: folderPath)) {
+                fatalError("Folder does not exist at path \(folderPath). Please create the folder first.")
+            }
             return URL(fileURLWithPath: folderPath, isDirectory: true)
         } else {
             fatalError("static attribute folderPath has not been set in FileIOController")
