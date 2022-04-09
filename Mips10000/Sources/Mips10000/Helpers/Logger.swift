@@ -9,13 +9,12 @@ import Foundation
 
 struct Logger {    
     func updateLog(with state: State, documentName: String, deleteExistingFile: Bool = false) throws {
-        let fileIO = FileIOController()
+        let fileIO = FileIOController.shared
         
         if (fileIO.fileExist(documentName: documentName) && !deleteExistingFile) {
             // Get current state, append current state and write update
             var newState = try fileIO.read([State].self, documentName: documentName)
             newState.append(state)
-            // TODO: Really?...
             // Transforms all 'addi' to 'add'
             newState.enumerated().forEach { (i, state) in
                 newState[i].IntegerQueue.enumerated().forEach { (j, item) in

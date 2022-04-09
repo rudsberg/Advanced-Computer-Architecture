@@ -3,7 +3,11 @@ import class Foundation.Bundle
 @testable import Mips10000
 
 final class Mips10000Tests: XCTestCase {
-    private let fileIO = FileIOController()
+    private var fileIO: FileIOController = .shared
+    
+    override func setUp() {
+        FileIOController.folderPath = "/Users/joelrudsberg/Documents/Files_HW1"
+    }
     
     func testStartupState() throws {
         // Write initial state

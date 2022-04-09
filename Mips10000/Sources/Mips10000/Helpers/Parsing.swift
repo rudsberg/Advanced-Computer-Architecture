@@ -24,7 +24,7 @@ public struct Parser {
     }
     
     private func intructionStrings(fromFile file: String) throws -> [String] {
-        let loader = FileIOController()
+        let loader = FileIOController.shared
         return try loader.read([String].self, documentName: file)
     }
 }

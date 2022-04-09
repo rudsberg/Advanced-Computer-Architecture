@@ -139,6 +139,7 @@ let config = RunConfig(
     logFile: "test2baby.json",
     runUpToCycle: 100
 )
+FileIOController.folderPath = "/Users/joelrudsberg/Desktop/test_hw1/"
 
 try App(config: config).run()
 

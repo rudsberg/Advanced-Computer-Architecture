@@ -7,16 +7,20 @@
 
 import Foundation
 
-struct FileIOController {
-    private let folderName = "Files_HW1"
+class FileIOController {
+    static let shared = FileIOController()
+    
+    /// Path that all logging and results will be saved in, as well as where the reading of program files will be done in
+    static var folderPath: String?
     private var folderURL: URL {
-        try! FileManager.default.url(
-            for: .documentDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: false
-        ).appendingPathComponent(folderName)
+        if let folderPath = FileIOController.folderPath {
+            return URL(fileURLWithPath: folderPath, isDirectory: true)
+        } else {
+            fatalError("static attribute folderPath has not been set in FileIOController")
+        }
     }
+    
+    private init() {}
     
     func createFile(documentName: String) {
         let fileURL = folderURL.appendingPathComponent(documentName)
