@@ -77,10 +77,11 @@ class FileIOController {
 //}
 
 struct Parser {
-    func parseInstructions(fromFile file: String) throws -> [Instruction] {
+    func parseInstructions(fromFile file: String) throws -> [(Int, Instruction)] {
         // Load json and parse as an array of strings
         let instructionStrings = try intructionStrings(fromFile: file)
         
+        var pc = -1
         return instructionStrings.map { i in
             Array(i
                 .replacingOccurrences(of: ",", with: "")
@@ -89,33 +90,39 @@ struct Parser {
                 .replacingOccurrences(of: ")", with: "")
                 .split(separator: " ")
             ).map { String($0) }
-        }.map { p -> Instruction in // parts
-            switch (p.first!) {
-            case "add", "addi", "sub", "mulu":
-                return ArithmeticInstruction(mnemonic: .init(rawValue: p[0])!, dest: Int(p[1])!, opA: Int(p[2])!, opB: Int(p[3])!)
-            case "ld", "st":
-                return MemoryInstruction(mnemonic: .init(rawValue: p[0])!, destOrSource: Int(p[1])!, imm: Int(p[2])!, addr: Int(p[3])!)
-            case "loop", "loop.pip":
-                return LoopInstruction(type: .init(rawValue: p[0])!, loopStart: Int(p[1])!)
-            case "nop":
-                return NoOp()
-            case "mov":
-                var type: MoveInstructionType!
-                let v = p[1]
-                if (v.first == "p") {
-                    type = .setPredicateReg
-                } else if (v == "LC" || v == "EC") {
-                    type = .setSpecialRegWithImmediate
-                } else if (p[2].first == "x") {
-                    type = .setDestRegWithImmediate
-                } else {
-                    type = .setDestRegWithSourceReg
-                }
-
-                return MoveInstruction(type: type, reg: v == "LC" ? 0 : 1, val: Int(p[2])!)
-            default:
-                fatalError("No matching instruction")
+        }.map { p -> (Int, Instruction) in // parts
+            pc += 1
+            return (pc, extractInstruction(from: p))
+        }
+    }
+    
+    private func extractInstruction(from strings: [String]) -> Instruction {
+        let p = strings
+        switch (p.first!) {
+        case "add", "addi", "sub", "mulu":
+            return ArithmeticInstruction(mnemonic: .init(rawValue: p[0])!, dest: Int(p[1])!, opA: Int(p[2])!, opB: Int(p[3])!)
+        case "ld", "st":
+            return MemoryInstruction(mnemonic: .init(rawValue: p[0])!, destOrSource: Int(p[1])!, imm: Int(p[2])!, addr: Int(p[3])!)
+        case "loop", "loop.pip":
+            return LoopInstruction(type: .init(rawValue: p[0])!, loopStart: Int(p[1])!)
+        case "nop":
+            return NoOp()
+        case "mov":
+            var type: MoveInstructionType!
+            let v = p[1]
+            if (v.first == "p") {
+                type = .setPredicateReg
+            } else if (v == "LC" || v == "EC") {
+                type = .setSpecialRegWithImmediate
+            } else if (p[2].first == "x") {
+                type = .setDestRegWithSourceReg
+            } else {
+                type = .setDestRegWithImmediate
             }
+
+            return MoveInstruction(type: type, reg: v == "LC" ? 0 : 1, val: Int(p[2])!)
+        default:
+            fatalError("No matching instruction")
         }
     }
     
