@@ -49,7 +49,7 @@ struct DependencyTableEntry {
     /// If the producer and consumer are in different basic blocks, and the consumer is in the loop body
     let interloopDep: [String]?
     let loopInvariantDep: [String]?
-    let psotLoopDep: [String]?
+    let postLoopDep: [String]?
 }
 
 let arguments = CommandLine.arguments
@@ -86,7 +86,7 @@ func findDependencies(in instructions: [(Int, Instruction)], for instruction: In
     } else {
         return false
     }
-    }.map { $0.0.toReg }
+    }.map { "\($0.0)" }
 }
 
 bb0.forEach { i in
@@ -97,12 +97,29 @@ bb0.forEach { i in
         localDep: findDependencies(in: Array(bb0.prefix(i.0)), for: i.1),
         interloopDep: nil,
         loopInvariantDep: nil,
-        psotLoopDep: nil
+        postLoopDep: nil
     )
     depTable.append(entry)
 }
 
-print("dep bb0", depTable)
+bb1.forEach { i in
+    let entry = DependencyTableEntry(
+        addr: i.0,
+        instr: i.1.name,
+        destReg: i.1.destReg,
+        // Search dep those before curr instr in same block
+        localDep: findDependencies(in: Array(bb1.prefix(i.0 - loopStart)), for: i.1),
+        // Search dep those after current instruction in loop (other basic block)
+        interloopDep: findDependencies(in: Array(bb1.prefix(i.0 - loopStart)), for: i.1),
+        // Search dep those in bb0
+        loopInvariantDep: findDependencies(in: bb0, for: i.1),
+        postLoopDep: nil
+    )
+    depTable.append(entry)
+}
+
+print("")
+depTable.forEach({ print($0) })
 
 // MARK: loop – Perform ASAP Scheduling
 // Output: valid schedule table, i.e. what each execution unit should perform each stage for the 3 basic blocks. Addr | ALU0 | ALU1 | Mult | Mem | Branch

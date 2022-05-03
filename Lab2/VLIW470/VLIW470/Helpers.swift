@@ -119,8 +119,9 @@ struct Parser {
             } else {
                 type = .setDestRegWithImmediate
             }
-
-            return MoveInstruction(type: type, reg: v == "LC" ? 0 : 1, val: Int(p[2])!)
+            
+            let reg = v == "LC" ? -1 : (v == "EC" ? -2 : Int(p[1])!)
+            return MoveInstruction(type: type, reg: reg, val: Int(p[2])!)
         default:
             fatalError("No matching instruction")
         }

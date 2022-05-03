@@ -97,6 +97,7 @@ struct MoveInstruction: Instruction {
     var name: String {
         "mov"
     }
+    /// -1 for LC, -2 for EC
     var destReg: String? {
         reg.toReg
     }
