@@ -46,7 +46,12 @@ struct MemoryInstruction: Instruction {
         mnemonic == .ld ? destOrSource.toReg : nil
     }
     var readRegs: [String]? {
-        [(imm + addr).toReg]
+        let forBoth = [(imm + addr).toReg]
+        if mnemonic == .st {
+            return forBoth + [destOrSource.toReg]
+        } else {
+            return forBoth
+        }
     }
     
     // dest for load, source for store
@@ -99,7 +104,7 @@ struct MoveInstruction: Instruction {
     }
     /// -1 for LC, -2 for EC
     var destReg: String? {
-        reg.toReg
+        reg == -1 ? "LC" : (reg == -2 ? "EC" : reg.toReg)
     }
     var readRegs: [String]? {
         type == .setDestRegWithSourceReg ? [val.toReg] : nil
@@ -121,5 +126,15 @@ enum MoveInstructionType {
 extension Int {
     var toReg: String {
         "x\(self)"
+    }
+}
+
+extension Sequence where Element == (Int, Instruction) {
+    var producingInstructions: [(Int, Instruction)] {
+        filter{ $0.1.destReg != nil && !($0.1.destReg == "LC" || $0.1.destReg == "EC") }
+    }
+    
+    var consumingInstructions: [(Int, Instruction)] {
+        filter{ $0.1.readRegs != nil && !$0.1.readRegs!.isEmpty }
     }
 }
