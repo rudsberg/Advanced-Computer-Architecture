@@ -7,6 +7,38 @@
 
 import Foundation
 
+struct DependencyTableEntry {
+    /// 0 for bb0, 1 for bb1, 2 for bb2
+    let phase: Int
+    let addr: Int
+    // let id: String
+    let instr: Instruction
+    let destReg: String?
+    /// If the producer and the consumer are in the same basic block
+    let localDep: [String] // ID
+    /// If the producer and consumer are in different basic blocks, and the consumer is in the loop body
+    let interloopDep: [String]
+    let loopInvariantDep: [String]
+    let postLoopDep: [String]
+}
+
+enum ExecutionUnit {
+    case ALU
+    case Mult
+    case Mem
+    case Branch
+}
+
+typealias Address = Int
+struct ScheduleRow {
+    var inLoop = false
+    let addr: Address
+    var ALU0: Address? = nil
+    var ALU1: Address? = nil
+    var Mult: Address? = nil
+    var Mem: Address? = nil
+    var Branch: Address? = nil
+}
 
 protocol Instruction {
     var name: String { get }
@@ -35,6 +67,7 @@ enum ArithmeticInstructionType: String {
     case add
     case addi
     case sub
+    // includes mulu but is executed in Mult unit not ALU
     case mulu
 }
 
@@ -129,6 +162,18 @@ extension Int {
     }
 }
 
+extension String {
+    var regToAddr: Int {
+        Int(dropFirst())!
+    }
+}
+
+extension Sequence where Element == String {
+    var regsToAddresses: [Int] {
+        self.map { $0.regToAddr }
+    }
+}
+
 extension Sequence where Element == (Int, Instruction) {
     var producingInstructions: [(Int, Instruction)] {
         filter{ $0.1.destReg != nil && !($0.1.destReg == "LC" || $0.1.destReg == "EC") }
@@ -136,5 +181,21 @@ extension Sequence where Element == (Int, Instruction) {
     
     var consumingInstructions: [(Int, Instruction)] {
         filter{ $0.1.readRegs != nil && !$0.1.readRegs!.isEmpty }
+    }
+}
+
+extension Instruction {
+    var execUnit: ExecutionUnit {
+        if let t = self as? ArithmeticInstruction {
+            return t.mnemonic == .mulu ? .Mult : .ALU
+        } else if let _ = self as? MoveInstruction {
+            return .ALU
+        } else if let _ = self as? MemoryInstruction {
+            return .Mem
+        } else if let _ = self as? LoopInstruction {
+            return .Branch
+        } else {
+            fatalError("Unsupported type")
+        }
     }
 }
