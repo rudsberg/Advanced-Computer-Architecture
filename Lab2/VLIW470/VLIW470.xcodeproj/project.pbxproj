@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		F20807202822AF7000CBBC63 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F208071F2822AF7000CBBC63 /* Algorithms */; };
+		F20807222822BB2000CBBC63 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807212822BB2000CBBC63 /* Scheduler.swift */; };
+		F20807242822BBC500CBBC63 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807232822BBC500CBBC63 /* App.swift */; };
+		F20807262822BCC600CBBC63 /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
 		F2703EA4282027030016D96C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
 		F2703EAB282027300016D96C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
 		F2703EAD282028120016D96C /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
@@ -26,6 +29,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F20807212822BB2000CBBC63 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
+		F20807232822BBC500CBBC63 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		F20807252822BCC600CBBC63 /* DependencyBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyBuilder.swift; sourceTree = "<group>"; };
 		F2703EA0282027030016D96C /* VLIW470 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = VLIW470; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2703EA3282027030016D96C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		F2703EAA282027300016D96C /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
@@ -73,6 +79,9 @@
 				F2703EA3282027030016D96C /* main.swift */,
 				F2703EAA282027300016D96C /* Helpers.swift */,
 				F2703EAC282028120016D96C /* Model.swift */,
+				F20807212822BB2000CBBC63 /* Scheduler.swift */,
+				F20807232822BBC500CBBC63 /* App.swift */,
+				F20807252822BCC600CBBC63 /* DependencyBuilder.swift */,
 			);
 			path = VLIW470;
 			sourceTree = "<group>";
@@ -155,7 +164,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				F2703EAD282028120016D96C /* Model.swift in Sources */,
+				F20807222822BB2000CBBC63 /* Scheduler.swift in Sources */,
+				F20807262822BCC600CBBC63 /* DependencyBuilder.swift in Sources */,
 				F2703EA4282027030016D96C /* main.swift in Sources */,
+				F20807242822BBC500CBBC63 /* App.swift in Sources */,
 				F2703EAB282027300016D96C /* Helpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
