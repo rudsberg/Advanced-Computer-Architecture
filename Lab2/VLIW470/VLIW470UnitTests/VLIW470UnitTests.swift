@@ -77,6 +77,26 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(schedule[7].Mem.toChar, "K")
     }
     
+    func testScheduler3() throws {
+        /*
+         [
+             "mov LC, 100",
+             "mov x2, 5",
+             "mulu x2, x2, x2",
+             "add x2, x2, x2",
+             "loop 3",
+             "st x2, 0x1000(x0)"
+         ]
+         */
+        
+        let program = try createProgram(fromFile: "test.json")
+        let db = DependencyBuilder()
+        let depTable = db.createTable(fromProgram: program)
+        
+        let s = Scheduler()
+        let schedule = s.schedule(using: depTable)
+    }
+    
     private func createProgram(fromFile file: String) throws -> [(Int, Instruction)] {
         FileIOController.folderPath = "/Users/joelrudsberg/Desktop/EPFL/adv-comp-arch/Advanced-Computer-Architecture/Lab2/VLIW470/VLIW470/resources"
         let program = try Parser().parseInstructions(fromFile: file)

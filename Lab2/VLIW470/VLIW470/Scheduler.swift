@@ -14,24 +14,15 @@ struct Scheduler {
         // Picks instruction in sequential order, checks the dependencies in table, and schedules the instruction in the earliest possible slot
         // All instructions must obey: S(P) + λ(P) ≤ S(C) + II, if violation, recompute by increasing II
         var schedule = [ScheduleRow]()
+        // Could be calculated but it will sort itself out by violating the equation
         var II = 1
         repeat {
-            // TODO: handle not adding blank spaces in looop
-            // Update schedule for each phase
-//            for block in [0, 1, 2] {
-//                let newSchedule = updateSchedule(
-//                    entries: depTable.filter { $0.block == block },
-//                    schedule: schedule.map { $0.1 }
-//                ).map { (block == 1, $0) }
-//
-//                schedule.append(contentsOf: newSchedule)
-//            }
             schedule = createSchedule(entries: depTable)
                 
             // Check if equation holds for all interloop instructions. If not, increase II and try again
             let loopInstructions = schedule.filter { $0.block == 1 }
             if equationHolds(forLoopInstructions: loopInstructions, II: II) {
-                print("Valid schedule for \(II) ✅")
+                print("Valid schedule for II=\(II) ✅")
                 break
             } else {
                 print("II broken for \(II)")
@@ -104,7 +95,8 @@ struct Scheduler {
         while (true) {
             // If exceed schedule, append empty rows
             while (i >= schedule.count) {
-                schedule.append(.init(addr: i, block: entry.block))
+                let newAddr = schedule.isEmpty ? 0 : schedule.map { $0.addr }.max()! + 1
+                schedule.append(.init(addr: newAddr, block: entry.block))
             }
             
             // Check if exec unit slot is available and create an updated row
