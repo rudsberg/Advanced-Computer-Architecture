@@ -34,21 +34,7 @@ struct RegisterAllocator {
         let atCopy = at
         var regCounter = 1
         atCopy.enumerated().forEach { (bIndex, b) in
-            let instructionOrder = [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch]
-                .sorted(by: { entry1, entry2 in
-                    let i1 = entry1.instr
-                    let i2 = entry2.instr
-                    if i1 == nil && i2 == nil {
-                        return true
-                    } else if i1 == nil && i2 != nil {
-                        return false
-                    } else if i1 != nil && i2 == nil {
-                        return true
-                    } else {
-                        return i1!.addr < i2!.addr
-                    }
-                })
-            instructionOrder.forEach { entry in
+            [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 if let instr = entry.instr, instr.isProducingInstruction {
                     // Allocate new fresh register
                     let newReg = "\(regCounter)"
