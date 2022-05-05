@@ -13,23 +13,23 @@ struct Scheduler {
         // Output: valid schedule table, i.e. what each execution unit should perform each stage for the 3 basic blocks. Addr | ALU0 | ALU1 | Mult | Mem | Branch
         // Picks instruction in sequential order, checks the dependencies in table, and schedules the instruction in the earliest possible slot
         // All instructions must obey: S(P) + λ(P) ≤ S(C) + II, if violation, recompute by increasing II
-        typealias InLoop = Bool
-        var schedule = [(InLoop, ScheduleRow)]()
+        var schedule = [ScheduleRow]()
         var II = 1
         repeat {
             // TODO: handle not adding blank spaces in looop
             // Update schedule for each phase
-            for block in [0, 1, 2] {
-                let newSchedule = updateSchedule(
-                    entries: depTable.filter { $0.block == block },
-                    schedule: schedule.map { $0.1 }
-                ).map { (block == 1, $0) }
-                
-                schedule.append(contentsOf: newSchedule)
-            }
+//            for block in [0, 1, 2] {
+//                let newSchedule = updateSchedule(
+//                    entries: depTable.filter { $0.block == block },
+//                    schedule: schedule.map { $0.1 }
+//                ).map { (block == 1, $0) }
+//
+//                schedule.append(contentsOf: newSchedule)
+//            }
+            schedule = createSchedule(entries: depTable)
                 
             // Check if equation holds for all interloop instructions. If not, increase II and try again
-            let loopInstructions = schedule.filter { $0.0 }.map { $0.1 }
+            let loopInstructions = schedule.filter { $0.block == 1 }
             if equationHolds(forLoopInstructions: loopInstructions, II: II) {
                 print("Valid schedule for \(II) ✅")
                 break
@@ -44,13 +44,13 @@ struct Scheduler {
         } while (true)
         
         print("\n======= Schedule =======")
-        schedule.map({ $0.1 }).forEach({ print($0) })
+        schedule.forEach({ print($0) })
          
-        return schedule.map { $0.1 }
+        return schedule.map { $0 }
     }
     
-    private func updateSchedule(entries: [DependencyTableEntry], schedule: [ScheduleRow]) -> [ScheduleRow] {
-        var schedule = schedule
+    private func createSchedule(entries: [DependencyTableEntry]) -> [ScheduleRow] {
+        var schedule = [ScheduleRow]()
         entries.forEach { entry in
             let stage = earliestScheduledStage(for: entry, in: schedule)
             schedule = addToSchedule(entry, atEarliest: stage, in: schedule)
@@ -75,7 +75,11 @@ struct Scheduler {
             .max()
         
         // If earliestPossibleAddress is smaller than where block start, use block start, else use it
-        return max(earliestPossibleAddress ?? 0, schedule.first(where: { $0.block == entry.block })?.addr ?? 0)
+        return max(
+            earliestPossibleAddress ?? 0,
+            // Find block start by looking at highest bundle addr of previous block, then adding 1
+            entry.block == 0 ? 0 : schedule.last(where: { $0.block == entry.block - 1 })!.addr + 1
+        )
     }
 
     /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the correct unit. Moves down if occupied until not.
