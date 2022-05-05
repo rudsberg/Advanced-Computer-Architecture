@@ -9,17 +9,17 @@ import Foundation
 import Algorithms
 
 struct Scheduler {
+    /// Output: valid schedule table, i.e. what each execution unit should perform each stage for the 3 basic blocks. Addr | ALU0 | ALU1 | Mult | Mem | Branch
+    /// Picks instruction in sequential order, checks the dependencies in table, and schedules the instruction in the earliest possible slot
+    /// All instructions must obey: S(P) + λ(P) ≤ S(C) + II, if violation, recompute by increasing II
     func schedule(using depTable: [DependencyTableEntry]) -> [ScheduleRow] {
-        // Output: valid schedule table, i.e. what each execution unit should perform each stage for the 3 basic blocks. Addr | ALU0 | ALU1 | Mult | Mem | Branch
-        // Picks instruction in sequential order, checks the dependencies in table, and schedules the instruction in the earliest possible slot
-        // All instructions must obey: S(P) + λ(P) ≤ S(C) + II, if violation, recompute by increasing II
         var schedule = [ScheduleRow]()
         // Could be calculated but it will sort itself out by violating the equation
         var II = 1
+        
         repeat {
             schedule = createSchedule(entries: depTable)
                 
-            // Check if equation holds for all interloop instructions. If not, increase II and try again
             let loopInstructions = schedule.filter { $0.block == 1 }
             if equationHolds(forLoopInstructions: loopInstructions, II: II) {
                 print("Valid schedule for II=\(II) ✅")
@@ -27,18 +27,15 @@ struct Scheduler {
             } else {
                 print("II broken for \(II)")
                 schedule.removeAll()
-                // TODO: add bundle in loop body...
+                // Simply increasing II will effectively move down loop instruction and recompute bb2
                 II += 1
             }
-            
-            // TODO: remove for submission
-            if (II > 1000) { fatalError("Infinite loop") }
         } while (true)
         
         print("\n======= Schedule =======")
         schedule.forEach({ print($0) })
          
-        return schedule.map { $0 }
+        return schedule
     }
     
     private func createSchedule(entries: [DependencyTableEntry]) -> [ScheduleRow] {
@@ -144,6 +141,7 @@ struct Scheduler {
         return nil
     }
 
+    /// Check if equation holds for all interloop instructions. If not, increase II and try again
     private func equationHolds(forLoopInstructions schedule: [ScheduleRow], II: Int) -> Bool {
         let loopInstructions = schedule
         // Group by ALU types

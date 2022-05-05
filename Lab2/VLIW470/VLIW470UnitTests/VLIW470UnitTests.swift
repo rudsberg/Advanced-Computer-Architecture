@@ -95,6 +95,27 @@ class VLIW470UnitTests: XCTestCase {
         
         let s = Scheduler()
         let schedule = s.schedule(using: depTable)
+        
+        XCTAssertEqual(schedule.count, 6)
+        XCTAssertEqual(schedule[0].ALU0, 0)
+        XCTAssertEqual(schedule[0].ALU1, 1)
+        XCTAssertTrue(schedule[0].Mult == nil && schedule[0].Mem == nil && schedule[0].Branch == nil)
+        
+        XCTAssertEqual(schedule[1].Mult, 2)
+        XCTAssertTrue(schedule[1].ALU0 == nil && schedule[1].ALU1 == nil && schedule[1].Mem == nil && schedule[1].Branch == nil)
+        
+        executionUnitsEmpty(bundle: schedule[2])
+        
+        executionUnitsEmpty(bundle: schedule[3])
+        
+        XCTAssertEqual(schedule[4].ALU0, 3)
+        XCTAssertEqual(schedule[4].Branch, 4)
+        
+        XCTAssertEqual(schedule[5].Mem, 5)
+    }
+    
+    private func executionUnitsEmpty(bundle: ScheduleRow) {
+        XCTAssertTrue(bundle.ALU0 == nil && bundle.ALU1 == nil && bundle.Mult == nil && bundle.Mem == nil && bundle.Branch == nil)
     }
     
     private func createProgram(fromFile file: String) throws -> [(Int, Instruction)] {
