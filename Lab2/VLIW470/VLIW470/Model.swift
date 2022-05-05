@@ -46,7 +46,7 @@ struct ScheduleRow: CustomStringConvertible {
     var Branch: Address? = nil
     
     var description: String {
-        "\(addr) | ALU0=\(ALU0), ALU1=\(ALU1), Mult=\(Mult), Mem=\(Mem), Branch=\(Branch)"
+        "\(addr) | ALU0=\(ALU0.toChar), ALU1=\(ALU1.toChar), Mult=\(Mult.toChar), Mem=\(Mem.toChar), Branch=\(Branch.toChar)"
     }
 }
 

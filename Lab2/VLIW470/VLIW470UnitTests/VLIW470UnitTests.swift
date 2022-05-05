@@ -9,7 +9,7 @@ import XCTest
 
 class VLIW470UnitTests: XCTestCase {
 
-    func testScheduler() throws {
+    func testScheduler1() throws {
         /*
          [
          0 - "mov LC, 10",
@@ -22,14 +22,10 @@ class VLIW470UnitTests: XCTestCase {
          ]
          */
         
-        FileIOController.folderPath = "/Users/joelrudsberg/Desktop/EPFL/adv-comp-arch/Advanced-Computer-Architecture/Lab2/VLIW470/VLIW470/resources"
-        let program = try Parser().parseInstructions(fromFile: "test2.json")
-        
-        // Use example table
+        let program = try createProgram(fromFile: "test2.json")
         let db = DependencyBuilder()
         let depTable = db.createTable(fromProgram: program)
         
-        // Try schedule first using only bb0
         let s = Scheduler()
         let schedule = s.schedule(using: depTable)
         
@@ -47,6 +43,21 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertTrue(schedule[2].ALU0 == nil && schedule[2].ALU1 == nil && schedule[2].Mult == nil)
         
         XCTAssertEqual(schedule[3].ALU0, 6)
+    }
+    
+    func testScheduler2() throws {
+        let program = try createProgram(fromFile: "handout.json")
+        let db = DependencyBuilder()
+        let depTable = db.createTable(fromProgram: program)
+        
+        let s = Scheduler()
+        let schedule = s.schedule(using: depTable)
+    }
+    
+    private func createProgram(fromFile file: String) throws -> [(Int, Instruction)] {
+        FileIOController.folderPath = "/Users/joelrudsberg/Desktop/EPFL/adv-comp-arch/Advanced-Computer-Architecture/Lab2/VLIW470/VLIW470/resources"
+        let program = try Parser().parseInstructions(fromFile: file)
+        return program
     }
     
 }

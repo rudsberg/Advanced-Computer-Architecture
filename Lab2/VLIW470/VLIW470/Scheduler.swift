@@ -36,6 +36,7 @@ struct Scheduler {
             } else {
                 print("II broken for \(II)")
                 schedule.removeAll()
+                // TODO: add bundle in loop body...
                 II += 1
             }
             
@@ -88,8 +89,8 @@ struct Scheduler {
         var i = index
         
         while (true) {
-            // If exceed schedule, append empty row
-            if (i >= schedule.count) {
+            // If exceed schedule, append empty rows
+            while (i >= schedule.count) {
                 schedule.append(.init(addr: i, block: entry.block))
             }
             

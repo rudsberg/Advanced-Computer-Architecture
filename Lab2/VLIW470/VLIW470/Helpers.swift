@@ -7,6 +7,24 @@
 
 import Foundation
 
+let alphabet = "abcdefghijklmnopqrstuvwxyz"
+    .uppercased()
+    .map { String($0) }
+
+extension Optional where Wrapped == Int {
+    var toChar: String {
+        if let num = self {
+            if num >= 26 {
+                return "\(num)"
+            } else {
+                return String(alphabet[num])
+            }
+        } else {
+            return "-"
+        }
+    }
+}
+
 class FileIOController {
     static let shared = FileIOController()
     
