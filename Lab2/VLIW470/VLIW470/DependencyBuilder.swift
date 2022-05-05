@@ -8,13 +8,13 @@
 import Foundation
 
 struct DependencyBuilder {
-    func createTable(fromProgram program: [(Int, Instruction)]) -> [DependencyTableEntry] {
-        var depTable = [DependencyTableEntry]()
+    func createTable(fromProgram program: Program) -> DependencyTable {
+        var depTable = DependencyTable()
         
         /// One before loopStart
         let (loopStart, loopEnd) = program.reduce((0, 0), { acc, ins in
-            if let instuction = ins.1 as? LoopInstruction {
-                return (instuction.loopStart, ins.0)
+            if let instuction = ins as? LoopInstruction {
+                return (instuction.loopStart, ins.addr)
             } else {
                 return acc
             }
@@ -27,10 +27,10 @@ struct DependencyBuilder {
         bb0.forEach { i in
             let entry = DependencyTableEntry(
                 block: 0,
-                addr: i.0,
-                instr: i.1,
-                destReg: i.1.destReg,
-                localDep: findDependencies(in: Array(bb0.prefix(i.0)), for: i.1),
+                addr: i.addr,
+                instr: i,
+                destReg: i.destReg,
+                localDep: findDependencies(in: Array(bb0.prefix(i.addr)), for: i),
                 interloopDep: [],
                 loopInvariantDep: [],
                 postLoopDep: []
@@ -43,23 +43,23 @@ struct DependencyBuilder {
             // Thus: take instructions assigned to before and not written to in loop
             let consideredLoopInvInstructions = bb0.producingInstructions.filter{ assignedI in
                 // Only read in loop
-                let destReg = assignedI.1.destReg!
-                return !bb1.contains(where: { $0.1.destReg == destReg })
+                let destReg = assignedI.destReg!
+                return !bb1.contains(where: { $0.destReg == destReg })
             }
             // An operand of instruction A has an interloop dependency if it is either produced within the loop body,
             // after A in sequential program order, or before the loop, in BB0 (or both).
             // Thus: take instructions after i and in bb0
-            var consideredInterLoopInstructions = bb1.dropFirst(i.0 - loopStart).producingInstructions + bb0.producingInstructions
-            consideredInterLoopInstructions = consideredInterLoopInstructions.filter { i in !consideredLoopInvInstructions.contains(where: { $0.0 == i.0 }) }
+            var consideredInterLoopInstructions = bb1.dropFirst(i.addr - loopStart).producingInstructions + bb0.producingInstructions
+            consideredInterLoopInstructions = consideredInterLoopInstructions.filter { i in !consideredLoopInvInstructions.contains(where: { $0.addr == i.addr }) }
             let entry = DependencyTableEntry(
                 block: 1,
-                addr: i.0,
-                instr: i.1,
-                destReg: i.1.destReg,
+                addr: i.addr,
+                instr: i,
+                destReg: i.destReg,
                 // Search dep those before curr instr in same block
-                localDep: findDependencies(in: Array(bb1.prefix(i.0 - loopStart)), for: i.1),
-                interloopDep: findDependencies(in: consideredInterLoopInstructions, for: i.1),
-                loopInvariantDep: findDependencies(in: consideredLoopInvInstructions, for: i.1),
+                localDep: findDependencies(in: Array(bb1.prefix(i.addr - loopStart)), for: i),
+                interloopDep: findDependencies(in: consideredInterLoopInstructions, for: i),
+                loopInvariantDep: findDependencies(in: consideredLoopInvInstructions, for: i),
                 postLoopDep: []
             )
             depTable.append(entry)
@@ -68,14 +68,14 @@ struct DependencyBuilder {
         bb2.forEach { i in
             let entry = DependencyTableEntry(
                 block: 2,
-                addr: i.0,
-                instr: i.1,
-                destReg: i.1.destReg,
-                localDep: findDependencies(in: Array(bb2.prefix(i.0 - loopEnd - 1)), for: i.1),
+                addr: i.addr,
+                instr: i,
+                destReg: i.destReg,
+                localDep: findDependencies(in: Array(bb2.prefix(i.addr - loopEnd - 1)), for: i),
                 interloopDep: [],
                 loopInvariantDep: [],
                 // Producer in bb1 and consumer in bb2
-                postLoopDep: findDependencies(in: bb1, for: i.1)
+                postLoopDep: findDependencies(in: bb1, for: i)
             )
             depTable.append(entry)
         }
@@ -87,14 +87,14 @@ struct DependencyBuilder {
     }
     
     /// Finds dependencies
-    private func findDependencies(in instructions: [(Int, Instruction)], for instruction: Instruction) -> [String] {
+    private func findDependencies(in instructions: Program, for instruction: Instruction) -> [String] {
         let RAW = instructions.filter {
-            guard let readRegs = instruction.readRegs, let destReg = $0.1.destReg else {
+            guard let readRegs = instruction.readRegs, let destReg = $0.destReg else {
                 return false
             }
             return readRegs.contains(destReg)
         }
-        return RAW.map { "\($0.0)" }
+        return RAW.map { "\($0.addr)" }
     }
 
 }

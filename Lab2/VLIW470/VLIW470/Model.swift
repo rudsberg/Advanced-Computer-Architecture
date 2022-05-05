@@ -7,6 +7,20 @@
 
 import Foundation
 
+typealias Program = [Instruction]
+typealias AllocatedTable = [RegisterAllocRow]
+typealias DependencyTable = [DependencyTableEntry]
+typealias Schedule = [ScheduleRow]
+
+struct RegisterAllocRow {
+    let addr: Address
+    var ALU0: Instruction? = nil
+    var ALU1: Instruction? = nil
+    var Mult: Instruction? = nil
+    var Mem: Instruction? = nil
+    var Branch: Instruction? = nil
+}
+
 struct DependencyTableEntry {
     /// 0 for bb0, 1 for bb1, 2 for bb2
     let block: Int
@@ -54,9 +68,11 @@ protocol Instruction {
     var name: String { get }
     var destReg: String? { get }
     var readRegs: [String]? { get }
+    var addr: Int { get }
 }
 
 struct ArithmeticInstruction: Instruction {
+    var addr: Int
     var name: String {
         mnemonic.rawValue
     }
@@ -82,6 +98,7 @@ enum ArithmeticInstructionType: String {
 }
 
 struct MemoryInstruction: Instruction {
+    var addr: Int
     var name: String {
         mnemonic.rawValue
     }
@@ -89,7 +106,7 @@ struct MemoryInstruction: Instruction {
         mnemonic == .ld ? destOrSource.toReg : nil
     }
     var readRegs: [String]? {
-        let forBoth = [(imm + addr).toReg]
+        let forBoth = [(imm + loadStoreAddr).toReg]
         if mnemonic == .st {
             return forBoth + [destOrSource.toReg]
         } else {
@@ -101,7 +118,7 @@ struct MemoryInstruction: Instruction {
     let mnemonic: MemoryInstructionType
     let destOrSource: Int
     let imm: Int
-    let addr: Int
+    var loadStoreAddr: Int
 }
 
 enum MemoryInstructionType: String {
@@ -110,6 +127,7 @@ enum MemoryInstructionType: String {
 }
 
 struct LoopInstruction: Instruction {
+    var addr: Int
     var name: String {
         type.rawValue
     }
@@ -130,6 +148,7 @@ enum LoopInstructionType: String {
 }
 
 struct NoOp: Instruction {
+    var addr: Int
     var name: String {
         "noop"
     }
@@ -142,6 +161,7 @@ struct NoOp: Instruction {
 }
 
 struct MoveInstruction: Instruction {
+    var addr: Int
     var name: String {
         "mov"
     }
@@ -184,13 +204,13 @@ extension Sequence where Element == String {
     }
 }
 
-extension Sequence where Element == (Int, Instruction) {
-    var producingInstructions: [(Int, Instruction)] {
-        filter{ $0.1.destReg != nil && !($0.1.destReg == "LC" || $0.1.destReg == "EC") }
+extension Sequence where Element == Instruction {
+    var producingInstructions: [Instruction] {
+        filter{ $0.destReg != nil && !($0.destReg == "LC" || $0.destReg == "EC") }
     }
     
-    var consumingInstructions: [(Int, Instruction)] {
-        filter{ $0.1.readRegs != nil && !$0.1.readRegs!.isEmpty }
+    var consumingInstructions: [Instruction] {
+        filter{ $0.readRegs != nil && !$0.readRegs!.isEmpty }
     }
 }
 

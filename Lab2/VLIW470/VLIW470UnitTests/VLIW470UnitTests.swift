@@ -118,7 +118,7 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertTrue(bundle.ALU0 == nil && bundle.ALU1 == nil && bundle.Mult == nil && bundle.Mem == nil && bundle.Branch == nil)
     }
     
-    private func createProgram(fromFile file: String) throws -> [(Int, Instruction)] {
+    private func createProgram(fromFile file: String) throws -> Program {
         FileIOController.folderPath = "/Users/joelrudsberg/Desktop/EPFL/adv-comp-arch/Advanced-Computer-Architecture/Lab2/VLIW470/VLIW470/resources"
         let program = try Parser().parseInstructions(fromFile: file)
         return program

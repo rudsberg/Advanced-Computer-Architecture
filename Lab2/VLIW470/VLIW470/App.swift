@@ -15,17 +15,15 @@ struct App {
     let config: Config
     
     func run() throws {
-        // MARK: - Parse program
+        // loop – Parse program
         let program = try Parser().parseInstructions(fromFile: config.programFile)
-        print("======= Program =======")
-        program.forEach { print($0) }
 
-        // MARK: loop – Build dependency table
+        // loop – Build dependency table
         let depTable = DependencyBuilder().createTable(fromProgram: program)
 
-        // MARK: loop – Perform ASAP Scheduling
-//        let schedule = Scheduler().schedule(using: depTable)
-
+        // loop – Perform ASAP Scheduling
+        let schedule = Scheduler().schedule(using: depTable)
+        
         // MARK: loop – Register Allocation (alloc_b)
         // Output: extended schedule table with register allocated
         // Firstly, we allocate a fresh unique register to each instruction producing a new value. Result: all destination registers will be specified

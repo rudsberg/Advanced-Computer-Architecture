@@ -12,8 +12,8 @@ struct Scheduler {
     /// Output: valid schedule table, i.e. what each execution unit should perform each stage for the 3 basic blocks. Addr | ALU0 | ALU1 | Mult | Mem | Branch
     /// Picks instruction in sequential order, checks the dependencies in table, and schedules the instruction in the earliest possible slot
     /// All instructions must obey: S(P) + λ(P) ≤ S(C) + II, if violation, recompute by increasing II
-    func schedule(using depTable: [DependencyTableEntry]) -> [ScheduleRow] {
-        var schedule = [ScheduleRow]()
+    func schedule(using depTable: DependencyTable) -> Schedule {
+        var schedule = Schedule()
         // Could be calculated but it will sort itself out by violating the equation
         var II = 1
         
@@ -38,8 +38,8 @@ struct Scheduler {
         return schedule
     }
     
-    private func createSchedule(entries: [DependencyTableEntry]) -> [ScheduleRow] {
-        var schedule = [ScheduleRow]()
+    private func createSchedule(entries: DependencyTable) -> Schedule {
+        var schedule = Schedule()
         entries.forEach { entry in
             let stage = earliestScheduledStage(for: entry, in: schedule)
             schedule = addToSchedule(entry, atEarliest: stage, in: schedule)
@@ -48,7 +48,7 @@ struct Scheduler {
     }
     
     /// Finds earliest possible bundle to schedule entry within it's block (bb0/1/2). Does not execution units if they are busy or not.
-    private func earliestScheduledStage(for entry: DependencyTableEntry, in schedule: [ScheduleRow]) -> Int {
+    private func earliestScheduledStage(for entry: DependencyTableEntry, in schedule: Schedule) -> Int {
         if entry.instr.execUnit == .Branch {
             return lastAddrInBlock(block: 1, in: schedule)
         }
@@ -74,18 +74,18 @@ struct Scheduler {
         )
     }
     
-    private func firstAddrInBlock(block: Int, in schedule: [ScheduleRow]) -> Int {
+    private func firstAddrInBlock(block: Int, in schedule: Schedule) -> Int {
         // Find block start by looking at highest bundle addr of previous block, then adding 1
         block == 0 ? 0 : schedule.last(where: { $0.block == block - 1 })!.addr + 1
     }
     
-    private func lastAddrInBlock(block: Int, in schedule: [ScheduleRow]) -> Int {
+    private func lastAddrInBlock(block: Int, in schedule: Schedule) -> Int {
         // Find block start by looking at highest bundle addr of previous block, then adding 1
         schedule.last(where: { $0.block == block })!.addr
     }
 
     /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the correct unit. Moves down if occupied until not.
-    private func addToSchedule(_ entry: DependencyTableEntry, atEarliest index: Int, in schedule: [ScheduleRow]) -> [ScheduleRow] {
+    private func addToSchedule(_ entry: DependencyTableEntry, atEarliest index: Int, in schedule: Schedule) -> Schedule {
         var schedule = schedule
         var i = index
         
@@ -142,7 +142,7 @@ struct Scheduler {
     }
 
     /// Check if equation holds for all interloop instructions. If not, increase II and try again
-    private func equationHolds(forLoopInstructions schedule: [ScheduleRow], II: Int) -> Bool {
+    private func equationHolds(forLoopInstructions schedule: Schedule, II: Int) -> Bool {
         let loopInstructions = schedule
         // Group by ALU types
         let iALU0 = loopInstructions.filter { $0.ALU0 != nil }.map { ($0.addr, ExecutionUnit.ALU) }

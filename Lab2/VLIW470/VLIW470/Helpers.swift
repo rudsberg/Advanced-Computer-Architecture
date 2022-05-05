@@ -95,12 +95,12 @@ class FileIOController {
 //}
 
 struct Parser {
-    func parseInstructions(fromFile file: String) throws -> [(Int, Instruction)] {
+    func parseInstructions(fromFile file: String) throws -> Program {
         // Load json and parse as an array of strings
         let instructionStrings = try intructionStrings(fromFile: file)
         
-        var pc = -1
-        return instructionStrings.map { i in
+        var addr = -1
+        let program = instructionStrings.map { i in
             Array(i
                 .replacingOccurrences(of: ",", with: "")
                 .replacingOccurrences(of: "x", with: "")
@@ -108,23 +108,28 @@ struct Parser {
                 .replacingOccurrences(of: ")", with: "")
                 .split(separator: " ")
             ).map { String($0) }
-        }.map { p -> (Int, Instruction) in // parts
-            pc += 1
-            return (pc, extractInstruction(from: p))
+        }.map { p -> Instruction in // parts
+            addr += 1
+            return extractInstruction(from: p, addr: addr)
         }
+        
+        print("======= Program =======")
+        program.forEach { print($0) }
+        
+        return program
     }
     
-    private func extractInstruction(from strings: [String]) -> Instruction {
+    private func extractInstruction(from strings: [String], addr: Address) -> Instruction {
         let p = strings
         switch (p.first!) {
         case "add", "addi", "sub", "mulu":
-            return ArithmeticInstruction(mnemonic: .init(rawValue: p[0])!, dest: Int(p[1])!, opA: Int(p[2])!, opB: Int(p[3])!)
+            return ArithmeticInstruction(addr: addr, mnemonic: .init(rawValue: p[0])!, dest: Int(p[1])!, opA: Int(p[2])!, opB: Int(p[3])!)
         case "ld", "st":
-            return MemoryInstruction(mnemonic: .init(rawValue: p[0])!, destOrSource: Int(p[1])!, imm: Int(p[2])!, addr: Int(p[3])!)
+            return MemoryInstruction(addr: addr, mnemonic: .init(rawValue: p[0])!, destOrSource: Int(p[1])!, imm: Int(p[2])!, loadStoreAddr: Int(p[3])!)
         case "loop", "loop.pip":
-            return LoopInstruction(type: .init(rawValue: p[0])!, loopStart: Int(p[1])!)
+            return LoopInstruction(addr: addr, type: .init(rawValue: p[0])!, loopStart: Int(p[1])!)
         case "nop":
-            return NoOp()
+            return NoOp(addr: addr)
         case "mov":
             var type: MoveInstructionType!
             let v = p[1]
@@ -139,7 +144,7 @@ struct Parser {
             }
             
             let reg = v == "LC" ? -1 : (v == "EC" ? -2 : Int(p[1])!)
-            return MoveInstruction(type: type, reg: reg, val: Int(p[2])!)
+            return MoveInstruction(addr: addr, type: type, reg: reg, val: Int(p[2])!)
         default:
             fatalError("No matching instruction")
         }

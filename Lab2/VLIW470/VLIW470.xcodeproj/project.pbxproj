@@ -20,6 +20,8 @@
 		F294D8E52823AC8F00916BFD /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
 		F294D8E62823AC8F00916BFD /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
 		F294D8E92823AE1400916BFD /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807212822BB2000CBBC63 /* Scheduler.swift */; };
+		F294D8ED2823D4DC00916BFD /* RegisterAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */; };
+		F294D8EE2823D4DC00916BFD /* RegisterAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */; };
 		F2C207F02823A814000E5876 /* VLIW470UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C207EF2823A814000E5876 /* VLIW470UnitTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -51,6 +53,7 @@
 		F2703EB4282029730016D96C /* vliw470.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = vliw470.json; sourceTree = "<group>"; };
 		F294D8EA2823AEBE00916BFD /* test.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = test.json; sourceTree = "<group>"; };
 		F294D8EB2823B35A00916BFD /* test2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = test2.json; sourceTree = "<group>"; };
+		F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterAllocator.swift; sourceTree = "<group>"; };
 		F2C207ED2823A814000E5876 /* VLIW470UnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VLIW470UnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2C207EF2823A814000E5876 /* VLIW470UnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VLIW470UnitTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -102,6 +105,7 @@
 				F20807212822BB2000CBBC63 /* Scheduler.swift */,
 				F20807232822BBC500CBBC63 /* App.swift */,
 				F20807252822BCC600CBBC63 /* DependencyBuilder.swift */,
+				F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */,
 			);
 			path = VLIW470;
 			sourceTree = "<group>";
@@ -229,6 +233,7 @@
 				F20807262822BCC600CBBC63 /* DependencyBuilder.swift in Sources */,
 				F2703EA4282027030016D96C /* main.swift in Sources */,
 				F20807242822BBC500CBBC63 /* App.swift in Sources */,
+				F294D8ED2823D4DC00916BFD /* RegisterAllocator.swift in Sources */,
 				F2703EAB282027300016D96C /* Helpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -237,6 +242,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F294D8EE2823D4DC00916BFD /* RegisterAllocator.swift in Sources */,
 				F2C207F02823A814000E5876 /* VLIW470UnitTests.swift in Sources */,
 				F294D8E92823AE1400916BFD /* Scheduler.swift in Sources */,
 				F294D8E52823AC8F00916BFD /* main.swift in Sources */,
