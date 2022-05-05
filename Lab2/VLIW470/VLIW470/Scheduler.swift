@@ -17,12 +17,13 @@ struct Scheduler {
         var schedule = [(InLoop, ScheduleRow)]()
         var II = 1
         repeat {
+            // TODO: handle not adding blank spaces in looop
             // Update schedule for each phase
-            for phase in [0, 1, 2] {
+            for block in [0, 1, 2] {
                 let newSchedule = updateSchedule(
-                    entries: depTable.filter { $0.phase == phase },
+                    entries: depTable.filter { $0.block == block },
                     schedule: schedule.map { $0.1 }
-                ).map { (phase == 1, $0) }
+                ).map { (block == 1, $0) }
                 
                 schedule.append(contentsOf: newSchedule)
             }
@@ -52,12 +53,12 @@ struct Scheduler {
         var schedule = schedule
         entries.forEach { entry in
             let stage = earliestScheduledStage(for: entry, in: schedule)
-            schedule.append(contentsOf: addToSchedule(entry, atEarliest: stage, in: schedule))
+            schedule = addToSchedule(entry, atEarliest: stage, in: schedule)
         }
         return schedule
     }
     
-    /// Finds earliest possible bundle to schedule entry. Does not execution units if they are busy or not.
+    /// Finds earliest possible bundle to schedule entry within it's block (bb0/1/2). Does not execution units if they are busy or not.
     private func earliestScheduledStage(for entry: DependencyTableEntry, in schedule: [ScheduleRow]) -> Int {
         // Find all dependencies (as addresses) that are already scheduled
         let allDeps = [entry.localDep + entry.interloopDep + entry.loopInvariantDep + entry.postLoopDep]
@@ -73,7 +74,8 @@ struct Scheduler {
             }
             .max()
         
-        return earliestPossibleAddress ?? 0
+        // If earliestPossibleAddress is smaller than where block start, use block start, else use it
+        return max(earliestPossibleAddress ?? 0, schedule.first(where: { $0.block == entry.block })?.addr ?? 0)
     }
 
     /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the correct unit. Moves down if occupied until not.
@@ -84,7 +86,7 @@ struct Scheduler {
         while (true) {
             // If exceed schedule, append empty row
             if (i >= schedule.count) {
-                schedule.append(.init(addr: i))
+                schedule.append(.init(addr: i, block: entry.block))
             }
             
             // Check if exec unit slot is available and create an updated row

@@ -26,7 +26,7 @@ struct DependencyBuilder {
 
         bb0.forEach { i in
             let entry = DependencyTableEntry(
-                phase: 0,
+                block: 0,
                 addr: i.0,
                 instr: i.1,
                 destReg: i.1.destReg,
@@ -52,7 +52,7 @@ struct DependencyBuilder {
             var consideredInterLoopInstructions = bb1.dropFirst(i.0 - loopStart).producingInstructions + bb0.producingInstructions
             consideredInterLoopInstructions = consideredInterLoopInstructions.filter { i in !consideredLoopInvInstructions.contains(where: { $0.0 == i.0 }) }
             let entry = DependencyTableEntry(
-                phase: 1,
+                block: 1,
                 addr: i.0,
                 instr: i.1,
                 destReg: i.1.destReg,
@@ -67,7 +67,7 @@ struct DependencyBuilder {
 
         bb2.forEach { i in
             let entry = DependencyTableEntry(
-                phase: 2,
+                block: 2,
                 addr: i.0,
                 instr: i.1,
                 destReg: i.1.destReg,

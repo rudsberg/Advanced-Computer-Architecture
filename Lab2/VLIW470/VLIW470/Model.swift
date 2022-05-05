@@ -9,7 +9,7 @@ import Foundation
 
 struct DependencyTableEntry {
     /// 0 for bb0, 1 for bb1, 2 for bb2
-    let phase: Int
+    let block: Int
     let addr: Int
     // let id: String
     let instr: Instruction
@@ -38,6 +38,7 @@ enum ExecutionUnit {
 typealias Address = Int
 struct ScheduleRow: CustomStringConvertible {
     let addr: Address
+    let block: Int
     var ALU0: Address? = nil
     var ALU1: Address? = nil
     var Mult: Address? = nil
@@ -45,7 +46,7 @@ struct ScheduleRow: CustomStringConvertible {
     var Branch: Address? = nil
     
     var description: String {
-        "\(addr) – ALU0=\(ALU0), ALU1=\(ALU1), Mult=\(Mult), Mem=\(Mem), Branch=\(Branch)"
+        "\(addr) | ALU0=\(ALU0), ALU1=\(ALU1), Mult=\(Mult), Mem=\(Mem), Branch=\(Branch)"
     }
 }
 
