@@ -14,6 +14,13 @@
 		F2703EA4282027030016D96C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
 		F2703EAB282027300016D96C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
 		F2703EAD282028120016D96C /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
+		F294D8E22823AC3800916BFD /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
+		F294D8E32823AC8F00916BFD /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
+		F294D8E42823AC8F00916BFD /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807232822BBC500CBBC63 /* App.swift */; };
+		F294D8E52823AC8F00916BFD /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
+		F294D8E62823AC8F00916BFD /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
+		F294D8E92823AE1400916BFD /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807212822BB2000CBBC63 /* Scheduler.swift */; };
+		F2C207F02823A814000E5876 /* VLIW470UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C207EF2823A814000E5876 /* VLIW470UnitTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -42,6 +49,10 @@
 		F2703EB2282029730016D96C /* visualize.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = visualize.html; sourceTree = "<group>"; };
 		F2703EB3282029730016D96C /* vliw470.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = vliw470.py; sourceTree = "<group>"; };
 		F2703EB4282029730016D96C /* vliw470.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = vliw470.json; sourceTree = "<group>"; };
+		F294D8EA2823AEBE00916BFD /* test.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = test.json; sourceTree = "<group>"; };
+		F294D8EB2823B35A00916BFD /* test2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = test2.json; sourceTree = "<group>"; };
+		F2C207ED2823A814000E5876 /* VLIW470UnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VLIW470UnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F2C207EF2823A814000E5876 /* VLIW470UnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VLIW470UnitTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +64,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F2C207EA2823A814000E5876 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -60,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				F2703EA2282027030016D96C /* VLIW470 */,
+				F2C207EE2823A814000E5876 /* VLIW470UnitTests */,
 				F2703EA1282027030016D96C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -68,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				F2703EA0282027030016D96C /* VLIW470 */,
+				F2C207ED2823A814000E5876 /* VLIW470UnitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,8 +115,18 @@
 				F2703EB4282029730016D96C /* vliw470.json */,
 				F2703EB3282029730016D96C /* vliw470.py */,
 				F2703EAF282029730016D96C /* vliwsimple.json */,
+				F294D8EA2823AEBE00916BFD /* test.json */,
+				F294D8EB2823B35A00916BFD /* test2.json */,
 			);
 			path = resources;
+			sourceTree = "<group>";
+		};
+		F2C207EE2823A814000E5876 /* VLIW470UnitTests */ = {
+			isa = PBXGroup;
+			children = (
+				F2C207EF2823A814000E5876 /* VLIW470UnitTests.swift */,
+			);
+			path = VLIW470UnitTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -122,6 +152,23 @@
 			productReference = F2703EA0282027030016D96C /* VLIW470 */;
 			productType = "com.apple.product-type.tool";
 		};
+		F2C207EC2823A814000E5876 /* VLIW470UnitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2C207F12823A814000E5876 /* Build configuration list for PBXNativeTarget "VLIW470UnitTests" */;
+			buildPhases = (
+				F2C207E92823A814000E5876 /* Sources */,
+				F2C207EA2823A814000E5876 /* Frameworks */,
+				F2C207EB2823A814000E5876 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VLIW470UnitTests;
+			productName = VLIW470UnitTests;
+			productReference = F2C207ED2823A814000E5876 /* VLIW470UnitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -133,6 +180,9 @@
 				LastUpgradeCheck = 1330;
 				TargetAttributes = {
 					F2703E9F282027030016D96C = {
+						CreatedOnToolsVersion = 13.3.1;
+					};
+					F2C207EC2823A814000E5876 = {
 						CreatedOnToolsVersion = 13.3.1;
 					};
 				};
@@ -154,9 +204,20 @@
 			projectRoot = "";
 			targets = (
 				F2703E9F282027030016D96C /* VLIW470 */,
+				F2C207EC2823A814000E5876 /* VLIW470UnitTests */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F2C207EB2823A814000E5876 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		F2703E9C282027030016D96C /* Sources */ = {
@@ -169,6 +230,20 @@
 				F2703EA4282027030016D96C /* main.swift in Sources */,
 				F20807242822BBC500CBBC63 /* App.swift in Sources */,
 				F2703EAB282027300016D96C /* Helpers.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2C207E92823A814000E5876 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F2C207F02823A814000E5876 /* VLIW470UnitTests.swift in Sources */,
+				F294D8E92823AE1400916BFD /* Scheduler.swift in Sources */,
+				F294D8E52823AC8F00916BFD /* main.swift in Sources */,
+				F294D8E62823AC8F00916BFD /* DependencyBuilder.swift in Sources */,
+				F294D8E42823AC8F00916BFD /* App.swift in Sources */,
+				F294D8E32823AC8F00916BFD /* Helpers.swift in Sources */,
+				F294D8E22823AC3800916BFD /* Model.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -310,6 +385,36 @@
 			};
 			name = Release;
 		};
+		F2C207F22823A814000E5876 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3KH9959JHW;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = VLIW470.VLIW470UnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F2C207F32823A814000E5876 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3KH9959JHW;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = VLIW470.VLIW470UnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -327,6 +432,15 @@
 			buildConfigurations = (
 				F2703EA8282027030016D96C /* Debug */,
 				F2703EA9282027030016D96C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F2C207F12823A814000E5876 /* Build configuration list for PBXNativeTarget "VLIW470UnitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F2C207F22823A814000E5876 /* Debug */,
+				F2C207F32823A814000E5876 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

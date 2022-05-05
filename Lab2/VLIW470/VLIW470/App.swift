@@ -24,7 +24,7 @@ struct App {
         let depTable = DependencyBuilder().createTable(fromProgram: program)
 
         // MARK: loop – Perform ASAP Scheduling
-        let schedule = Scheduler().schedule(using: depTable)
+//        let schedule = Scheduler().schedule(using: depTable)
 
         // MARK: loop – Register Allocation (alloc_b)
         // Output: extended schedule table with register allocated

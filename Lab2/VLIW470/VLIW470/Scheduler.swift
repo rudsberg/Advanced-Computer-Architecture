@@ -43,29 +43,40 @@ struct Scheduler {
         } while (true)
         
         print("\n======= Schedule =======")
-        schedule.forEach({ print($0) })
+        schedule.map({ $0.1 }).forEach({ print($0) })
          
         return schedule.map { $0.1 }
     }
     
+    private func updateSchedule(entries: [DependencyTableEntry], schedule: [ScheduleRow]) -> [ScheduleRow] {
+        var schedule = schedule
+        entries.forEach { entry in
+            let stage = earliestScheduledStage(for: entry, in: schedule)
+            schedule.append(contentsOf: addToSchedule(entry, atEarliest: stage, in: schedule))
+        }
+        return schedule
+    }
+    
+    /// Finds earliest possible bundle to schedule entry. Does not execution units if they are busy or not.
     private func earliestScheduledStage(for entry: DependencyTableEntry, in schedule: [ScheduleRow]) -> Int {
         // Find all dependencies (as addresses) that are already scheduled
         let allDeps = [entry.localDep + entry.interloopDep + entry.loopInvariantDep + entry.postLoopDep]
             .flatMap { $0 }
             .map { Int($0)! }
 
-        // Filter out states that have match dependency
         let earliestPossibleAddress = schedule
+            // Filter out states that have have an dependency with entry
             .filter { allDeps.contains($0.ALU0 ?? -1) || allDeps.contains($0.ALU1 ?? -1) || allDeps.contains($0.Mult ?? -1) || allDeps.contains($0.Mem ?? -1) || allDeps.contains($0.Branch ?? -1) }
+            // Add latency to them. MUL latency of 3, all else 1
             .map {
-                $0.addr + (allDeps.contains($0.Mult ?? -1) ? 3 : 1) // MUL latency of 3, all else 1
+                $0.addr + (allDeps.contains($0.Mult ?? -1) ? 3 : 1)
             }
             .max()
         
         return earliestPossibleAddress ?? 0
     }
 
-    /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the right unit. Moves down if occupied
+    /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the correct unit. Moves down if occupied until not.
     private func addToSchedule(_ entry: DependencyTableEntry, atEarliest index: Int, in schedule: [ScheduleRow]) -> [ScheduleRow] {
         var schedule = schedule
         var i = index
@@ -76,6 +87,7 @@ struct Scheduler {
                 schedule.append(.init(addr: i))
             }
             
+            // Check if exec unit slot is available and create an updated row
             if let updatedRow = update(schedule[i], ifCanBeHandled: entry) {
                 schedule[i] = updatedRow
                 return schedule
@@ -120,15 +132,6 @@ struct Scheduler {
         return nil
     }
 
-    private func updateSchedule(entries: [DependencyTableEntry], schedule: [ScheduleRow]) -> [ScheduleRow] {
-        var schedule = schedule
-        entries.forEach { entry in
-            let stage = earliestScheduledStage(for: entry, in: schedule)
-            schedule.append(contentsOf: addToSchedule(entry, atEarliest: stage, in: schedule))
-        }
-        return schedule
-    }
-
     private func equationHolds(forLoopInstructions schedule: [ScheduleRow], II: Int) -> Bool {
         let loopInstructions = schedule
         // Group by ALU types
@@ -152,7 +155,7 @@ struct Scheduler {
             entry.1 == .Mult ? 3 : 1
         }
         
-        return entries.combinations(ofCount: 2).allSatisfy { combo in
+        return combos(elements: entries, k: 2).allSatisfy { combo in
             guard combo.count > 1 else { return true }
             // S(P) + λ(P) ≤ S(C) + II
             let P = combo[0]

@@ -22,6 +22,12 @@ struct DependencyTableEntry {
     let postLoopDep: [String]
 }
 
+extension DependencyTableEntry: CustomStringConvertible {
+    var description: String {
+        "\(addr) – \(instr.name), \(destReg ?? "-"), local: \(localDep), interL: \(interloopDep), loopInv: \(loopInvariantDep), postLoop: \(postLoopDep)"
+    }
+}
+
 enum ExecutionUnit {
     case ALU
     case Mult
@@ -30,14 +36,17 @@ enum ExecutionUnit {
 }
 
 typealias Address = Int
-struct ScheduleRow {
-    var inLoop = false
+struct ScheduleRow: CustomStringConvertible {
     let addr: Address
     var ALU0: Address? = nil
     var ALU1: Address? = nil
     var Mult: Address? = nil
     var Mem: Address? = nil
     var Branch: Address? = nil
+    
+    var description: String {
+        "\(addr) – ALU0=\(ALU0), ALU1=\(ALU1), Mult=\(Mult), Mem=\(Mem), Branch=\(Branch)"
+    }
 }
 
 protocol Instruction {
