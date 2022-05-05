@@ -24,6 +24,9 @@ struct App {
         // loop – Perform ASAP Scheduling
         let schedule = Scheduler().schedule(using: depTable)
         
+        // loop - Perform Register allocation
+        let allocatedTable = RegisterAllocator().alloc_b(schedule: schedule, depTable: depTable)
+        
         // MARK: loop – Register Allocation (alloc_b)
         // Output: extended schedule table with register allocated
         // Firstly, we allocate a fresh unique register to each instruction producing a new value. Result: all destination registers will be specified

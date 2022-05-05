@@ -14,11 +14,16 @@ typealias Schedule = [ScheduleRow]
 
 struct RegisterAllocRow {
     let addr: Address
-    var ALU0: Instruction? = nil
-    var ALU1: Instruction? = nil
-    var Mult: Instruction? = nil
-    var Mem: Instruction? = nil
-    var Branch: Instruction? = nil
+    var ALU0 = RegisterAllocEntry(execUnit: .ALU(0))
+    var ALU1 = RegisterAllocEntry(execUnit: .ALU(1))
+    var Mult = RegisterAllocEntry(execUnit: .Mult)
+    var Mem = RegisterAllocEntry(execUnit: .Mem)
+    var Branch = RegisterAllocEntry(execUnit: .Branch)
+}
+
+struct RegisterAllocEntry {
+    let execUnit: ExecutionUnit
+    var instr: Instruction? = nil
 }
 
 struct DependencyTableEntry {
@@ -42,11 +47,19 @@ extension DependencyTableEntry: CustomStringConvertible {
     }
 }
 
-enum ExecutionUnit {
-    case ALU
+enum ExecutionUnit: Equatable {
+    case ALU(Int)
     case Mult
     case Mem
     case Branch
+    
+//    static func ==(lhs: ExecutionUnit, rhs: ExecutionUnit) -> Bool {
+//        if case let ExecutionUnit.ALU(i1) = lhs, case let ExecutionUnit.ALU(i2) = rhs {
+//            return i1 == i2
+//        } else {
+//            return lhs == .Mem && rhs == .Mem || lhs == .Mult && rhs == .Mult || lhs == .Branch && rhs == .Branch
+//        }
+//    }
 }
 
 typealias Address = Int
@@ -64,11 +77,18 @@ struct ScheduleRow: CustomStringConvertible {
     }
 }
 
-protocol Instruction {
+protocol Instruction: CustomStringConvertible {
     var name: String { get }
-    var destReg: String? { get }
+    var destReg: String? { get set }
     var readRegs: [String]? { get }
     var addr: Int { get }
+}
+
+extension Instruction {
+    var description: String {
+        let a: Int? = addr
+        return "\(a.toChar): \(name) dest=\(destReg), read=\(readRegs)"
+    }
 }
 
 struct ArithmeticInstruction: Instruction {
@@ -77,14 +97,15 @@ struct ArithmeticInstruction: Instruction {
         mnemonic.rawValue
     }
     var destReg: String? {
-        dest.toReg
+        get { dest.toReg }
+        set { self.dest = newValue != nil ? Int(newValue!)! : self.dest }
     }
     var readRegs: [String]? {
         [opA, opB].map { $0.toReg }
     }
     
     let mnemonic: ArithmeticInstructionType
-    let dest: Int
+    var dest: Int
     let opA: Int
     let opB: Int // or immediate
 }
@@ -103,7 +124,8 @@ struct MemoryInstruction: Instruction {
         mnemonic.rawValue
     }
     var destReg: String? {
-        mnemonic == .ld ? destOrSource.toReg : nil
+        get { mnemonic == .ld ? destOrSource.toReg : nil }
+        set { self.destOrSource = mnemonic == .ld ? (newValue != nil ? Int(newValue!)! : self.destOrSource) : self.destOrSource }
     }
     var readRegs: [String]? {
         let forBoth = [(imm + loadStoreAddr).toReg]
@@ -116,7 +138,7 @@ struct MemoryInstruction: Instruction {
     
     // dest for load, source for store
     let mnemonic: MemoryInstructionType
-    let destOrSource: Int
+    var destOrSource: Int
     let imm: Int
     var loadStoreAddr: Int
 }
@@ -132,7 +154,8 @@ struct LoopInstruction: Instruction {
         type.rawValue
     }
     var destReg: String? {
-        nil
+        get { nil }
+        set {}
     }
     var readRegs: [String]? {
         nil
@@ -153,7 +176,8 @@ struct NoOp: Instruction {
         "noop"
     }
     var destReg: String? {
-        nil
+        get { nil }
+        set {}
     }
     var readRegs: [String]? {
         nil
@@ -167,14 +191,15 @@ struct MoveInstruction: Instruction {
     }
     /// -1 for LC, -2 for EC
     var destReg: String? {
-        reg == -1 ? "LC" : (reg == -2 ? "EC" : reg.toReg)
+        get { reg == -1 ? "LC" : (reg == -2 ? "EC" : reg.toReg) }
+        set { reg = reg == -1 || reg == -2 ? reg : (newValue != nil ? Int(newValue!)! : self.reg) }
     }
     var readRegs: [String]? {
         type == .setDestRegWithSourceReg ? [val.toReg] : nil
     }
     
     let type: MoveInstructionType
-    let reg: Int
+    var reg: Int
     // bool, imm, or source
     let val: Int
 }
@@ -206,7 +231,7 @@ extension Sequence where Element == String {
 
 extension Sequence where Element == Instruction {
     var producingInstructions: [Instruction] {
-        filter{ $0.destReg != nil && !($0.destReg == "LC" || $0.destReg == "EC") }
+        filter { $0.isProducingInstruction }
     }
     
     var consumingInstructions: [Instruction] {
@@ -215,11 +240,15 @@ extension Sequence where Element == Instruction {
 }
 
 extension Instruction {
+    var isProducingInstruction: Bool {
+        destReg != nil && !(destReg == "LC" || destReg == "EC")
+    }
+    
     var execUnit: ExecutionUnit {
         if let t = self as? ArithmeticInstruction {
-            return t.mnemonic == .mulu ? .Mult : .ALU
+            return t.mnemonic == .mulu ? .Mult : .ALU(0) // 0 disregarded
         } else if let _ = self as? MoveInstruction {
-            return .ALU
+            return .ALU(0) // 0 disregarded
         } else if let _ = self as? MemoryInstruction {
             return .Mem
         } else if let _ = self as? LoopInstruction {

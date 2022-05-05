@@ -11,27 +11,64 @@ struct RegisterAllocator {
     func alloc_b(schedule: Schedule, depTable: DependencyTable) -> AllocatedTable {
         // Map schedule to alloc table, containing the instructions rather than only their original address
         var at: AllocatedTable = schedule.map {
-            func find(_ addr: Int?) -> Instruction? {
+            func find(_ addr: Int?, _ unit: ExecutionUnit) -> RegisterAllocEntry {
                 if let addr = addr {
-                    return depTable[addr].instr
+                    return .init(execUnit: unit, instr: depTable[addr].instr)
                 } else {
-                    return nil
+                    return .init(execUnit: unit)
                 }
             }
             
-            return .init(addr: $0.addr, ALU0: find($0.ALU0), ALU1: find($0.ALU1), Mult: find($0.Mult), Mem: find($0.Mem), Branch: find($0.Branch))
+            return .init(
+                addr: $0.addr,
+                ALU0: find($0.ALU0, .ALU(0)),
+                ALU1: find($0.ALU1, .ALU(1)),
+                Mult: find($0.Mult, .Mult),
+                Mem: find($0.Mem, .Mem),
+                Branch: find($0.Branch, .Branch)
+            )
         }
-
+        
         // Phase 1: Allocate fresh unique registers to each instruction producing a new value
         // Output: all destinations registers specified
+        let atCopy = at
         var regCounter = 1
-        at.enumerated().forEach { (i, b) in
-            // Map schedule to instructions & sort in instruction order
-//            let instructions = [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch]
-//                .compactMap { $0 }
-//                .sorted(by: { $0.ad < $1 })
-//                .map { depTable[$0].instr }
-            
+        atCopy.enumerated().forEach { (bIndex, b) in
+            let instructionOrder = [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch]
+                .sorted(by: { entry1, entry2 in
+                    let i1 = entry1.instr
+                    let i2 = entry2.instr
+                    if i1 == nil && i2 == nil {
+                        return true
+                    } else if i1 == nil && i2 != nil {
+                        return false
+                    } else if i1 != nil && i2 == nil {
+                        return true
+                    } else {
+                        return i1!.addr < i2!.addr
+                    }
+                })
+            instructionOrder.forEach { entry in
+                if let instr = entry.instr, instr.isProducingInstruction {
+                    // Allocate new fresh register
+                    let newReg = "\(regCounter)"
+                    switch entry.execUnit {
+                    case .ALU(let i):
+                        if i == 0 {
+                            at[bIndex].ALU0.instr?.destReg = newReg
+                        } else {
+                            at[bIndex].ALU1.instr?.destReg = newReg
+                        }
+                    case .Mult:
+                        at[bIndex].Mult.instr?.destReg = newReg
+                    case .Mem:
+                        at[bIndex].Mem.instr?.destReg = newReg
+                    case .Branch:
+                        at[bIndex].Branch.instr?.destReg = newReg
+                    }
+                    regCounter += 1
+                }
+            }
         }
         
         // Phase 2: Link each operand to the registers newly allocated in phase 1
@@ -47,7 +84,9 @@ struct RegisterAllocator {
         // be checked to not be violated.
         
         print("\n======= alloc_b allocation =======")
-        at.forEach({ print($0) })
+        at.enumerated().forEach{ (addr, x) in
+            print("\(addr) | ALU0=\(x.ALU0.instr), ALU1=\(x.ALU1.instr), Mult=\(x.Mult.instr), Mem=\(x.Mem.instr), Branch=\(x.Branch.instr)")
+        }
         
         return at
     }

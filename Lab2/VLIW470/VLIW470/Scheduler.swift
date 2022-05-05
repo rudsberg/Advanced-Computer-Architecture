@@ -145,8 +145,8 @@ struct Scheduler {
     private func equationHolds(forLoopInstructions schedule: Schedule, II: Int) -> Bool {
         let loopInstructions = schedule
         // Group by ALU types
-        let iALU0 = loopInstructions.filter { $0.ALU0 != nil }.map { ($0.addr, ExecutionUnit.ALU) }
-        let iALU1 = loopInstructions.filter { $0.ALU1 != nil }.map { ($0.addr, ExecutionUnit.ALU) }
+        let iALU0 = loopInstructions.filter { $0.ALU0 != nil }.map { ($0.addr, ExecutionUnit.ALU(0)) }
+        let iALU1 = loopInstructions.filter { $0.ALU1 != nil }.map { ($0.addr, ExecutionUnit.ALU(1)) }
         let Mult = loopInstructions.filter { $0.Mult != nil }.map { ($0.addr, ExecutionUnit.Mult) }
         let Mem = loopInstructions.filter { $0.Mem != nil }.map { ($0.addr, ExecutionUnit.Mem) }
         let Branch = loopInstructions.filter { $0.Branch != nil }.map { ($0.addr, ExecutionUnit.Branch) }

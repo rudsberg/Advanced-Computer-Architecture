@@ -114,6 +114,16 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(schedule[5].Mem, 5)
     }
     
+    func testAlloc_b() throws {
+        let program = try createProgram(fromFile: "handout.json")
+        let db = DependencyBuilder()
+        let depTable = db.createTable(fromProgram: program)
+        let s = Scheduler()
+        let schedule = s.schedule(using: depTable)
+        
+        let allocator = RegisterAllocator().alloc_b(schedule: schedule, depTable: depTable)
+    }
+    
     private func executionUnitsEmpty(bundle: ScheduleRow) {
         XCTAssertTrue(bundle.ALU0 == nil && bundle.ALU1 == nil && bundle.Mult == nil && bundle.Mem == nil && bundle.Branch == nil)
     }
