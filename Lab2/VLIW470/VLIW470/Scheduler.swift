@@ -61,6 +61,10 @@ struct Scheduler {
     
     /// Finds earliest possible bundle to schedule entry within it's block (bb0/1/2). Does not execution units if they are busy or not.
     private func earliestScheduledStage(for entry: DependencyTableEntry, in schedule: [ScheduleRow]) -> Int {
+        if entry.instr.execUnit == .Branch {
+            return lastAddrInBlock(block: 1, in: schedule)
+        }
+        
         // Find all dependencies (as addresses) that are already scheduled
         let allDeps = [entry.localDep + entry.interloopDep + entry.loopInvariantDep + entry.postLoopDep]
             .flatMap { $0 }
@@ -78,9 +82,18 @@ struct Scheduler {
         // If earliestPossibleAddress is smaller than where block start, use block start, else use it
         return max(
             earliestPossibleAddress ?? 0,
-            // Find block start by looking at highest bundle addr of previous block, then adding 1
-            entry.block == 0 ? 0 : schedule.last(where: { $0.block == entry.block - 1 })!.addr + 1
+            firstAddrInBlock(block: entry.block, in: schedule)
         )
+    }
+    
+    private func firstAddrInBlock(block: Int, in schedule: [ScheduleRow]) -> Int {
+        // Find block start by looking at highest bundle addr of previous block, then adding 1
+        block == 0 ? 0 : schedule.last(where: { $0.block == block - 1 })!.addr + 1
+    }
+    
+    private func lastAddrInBlock(block: Int, in schedule: [ScheduleRow]) -> Int {
+        // Find block start by looking at highest bundle addr of previous block, then adding 1
+        schedule.last(where: { $0.block == block })!.addr
     }
 
     /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the correct unit. Moves down if occupied until not.
