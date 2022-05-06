@@ -20,6 +20,7 @@ struct RegisterAllocator {
         // Phase 2: Link each operand to the registers newly allocated in phase 1
         // If two dependencies, must be in bb0 and bb1, then use register of bb0. Incorrectness resolved in phase 3.
         // Output: all operand registers specified
+        // TODO: ask for the last store, "for two producers then pick bb0, we ensure it's only from bb0 and bb1"
         at = linkRegisters(at)
         
         // Phase 3: Fix the interloop dependencies
@@ -113,11 +114,12 @@ struct RegisterAllocator {
                     // Find what readReg was renamed to
                     // readRegs are pointing to the OLD regs, check renamed regs for those that have match
                     // and return the old regs
-                    let newRegs = readRegs.map { oldRegToNewFreshReg(oldReg: $0, allocTable: allocTable) }
+                    let block = depTable.first(where: { $0.addr == instr.addr })!.block
+                    let newRegs = readRegs.map { oldRegToNewFreshReg(oldReg: $0, block: block, allocTable: allocTable) }
 
                     switch entry.execUnit {
                     case .ALU(let i):
-                        if i == 1 {
+                        if i == 0 {
                             at.table[bIndex].ALU0.instr?.readRegs = newRegs
                         } else {
                             at.table[bIndex].ALU1.instr?.readRegs = newRegs
@@ -135,15 +137,22 @@ struct RegisterAllocator {
         return at
     }
     
-    private func oldRegToNewFreshReg(oldReg: String, allocTable: AllocatedTable) -> String {
+    private func oldRegToNewFreshReg(oldReg: String, block: Int, allocTable: AllocatedTable) -> String {
         // If two match then return the one in bb0
         let newRegs = allocTable.renamedRegs
             .filter { oldReg.regToAddr == $0.oldReg }
             .map { ($0.block, $0.newReg.toReg) }
         assert(newRegs.count <= 2)
         if newRegs.count == 2 {
-            // Take the one in bb0
             return newRegs.first(where: { $0.0 == 0 })!.1
+//            if block == 1 {
+        // TODO: what's the intention to do here???
+//                // return the one from bb0
+//                return newRegs.first(where: { $0.0 == 0 })!.1
+//            } else {
+//                // return the one from bb1
+//                return newRegs.first(where: { $0.0 == 1 })!.1
+//            }
         } else {
             return newRegs[0].1
         }

@@ -150,7 +150,7 @@ struct MemoryInstruction: Instruction {
         get {
             let forBoth = [(imm + loadStoreAddr).toReg]
             if mnemonic == .st {
-                return forBoth + [destOrSource.toReg]
+                return [destOrSource.toReg] + forBoth
             } else {
                 return forBoth
             }

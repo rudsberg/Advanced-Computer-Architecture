@@ -143,7 +143,9 @@ class VLIW470UnitTests: XCTestCase {
         let s = Scheduler()
         let schedule = s.schedule(using: depTable)
         
-        let allocator = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
+        let res = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
+        let t = res.table
+        
     }
     
     private func executionUnitsEmpty(bundle: ScheduleRow) {
