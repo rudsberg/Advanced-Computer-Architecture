@@ -104,11 +104,21 @@ struct ArithmeticInstruction: Instruction {
         set { self.dest = newValue != nil ? Int(newValue!)! : self.dest }
     }
     var readRegs: [String]? {
-        get { [opA, opB].map { $0.toReg } }
+        get {
+            if mnemonic == .addi {
+                return [opA.toReg]
+            } else {
+                return [opA, opB].map { $0.toReg }
+            }
+        }
         set {
             if let readRegs = newValue {
-                opA = readRegs[0].regToAddr
-                opB = readRegs[1].regToAddr
+                if mnemonic == .addi {
+                    opA = readRegs[0].regToAddr
+                } else {
+                    opA = readRegs[0].regToAddr
+                    opB = readRegs[1].regToAddr
+                }
             }
         }
     }

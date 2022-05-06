@@ -132,6 +132,7 @@ class VLIW470UnitTests: XCTestCase {
         let s = Scheduler()
         let schedule = s.schedule(using: depTable)
         
+        // TODO: 
         XCTAssertEqual(schedule.filter { $0.block == 1 }.count, 3)
     }
     
@@ -142,7 +143,7 @@ class VLIW470UnitTests: XCTestCase {
         let s = Scheduler()
         let schedule = s.schedule(using: depTable)
         
-        let allocator = RegisterAllocator().alloc_b(schedule: schedule, depTable: depTable)
+        let allocator = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
     }
     
     private func executionUnitsEmpty(bundle: ScheduleRow) {
