@@ -114,6 +114,27 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(schedule[5].Mem, 5)
     }
     
+    func testScheduler4() throws {
+        /*
+         [
+         "mov x1, 10",
+         "mulu x2, x1, x2",
+         "loop 1",
+         "addi x3, x4, 1"
+         ]
+         */
+        // Should create a loop of size 3 due to the interloop dep
+        
+        let program = try createProgram(fromFile: "test3.json")
+        let db = DependencyBuilder()
+        let depTable = db.createTable(fromProgram: program)
+        
+        let s = Scheduler()
+        let schedule = s.schedule(using: depTable)
+        
+        XCTAssertEqual(schedule.filter { $0.block == 1 }.count, 3)
+    }
+    
     func testAlloc_b() throws {
         let program = try createProgram(fromFile: "handout.json")
         let db = DependencyBuilder()

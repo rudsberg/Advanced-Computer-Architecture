@@ -14,24 +14,12 @@ struct Scheduler {
     /// All instructions must obey: S(P) + λ(P) ≤ S(C) + II, if violation, recompute by increasing II
     func schedule(using depTable: DependencyTable) -> Schedule {
         var schedule = Schedule()
-        // Could be calculated but it will sort itself out by violating the equation
-        var II = 1
+        schedule = createSchedule(entries: depTable)
         
-        repeat {
-            schedule = createSchedule(entries: depTable)
-                
-            let loopInstructions = schedule.filter { $0.block == 1 }
-            if equationHolds(forLoopInstructions: loopInstructions, II: II) {
-                print("Valid schedule for II=\(II) ✅")
-                break
-            } else {
-                print("II broken for \(II)")
-                schedule.removeAll()
-                // Simply increasing II will effectively move down loop instruction and recompute bb2
-                II += 1
-            }
-        } while (true)
+        // Ensures II is obeyed
+        schedule = recomputeIfNeeded(schedule: schedule)
         
+        // Print for debugging
         print("\n======= Schedule =======")
         schedule.forEach({ print($0) })
          
@@ -140,6 +128,51 @@ struct Scheduler {
         }
         return nil
     }
+    
+    /// Recomputes the schedule if needed, depending on the II
+    private func recomputeIfNeeded(schedule: Schedule) -> Schedule {
+        var schedule = schedule
+        let loopInstructions = schedule.filter { $0.block == 1 }
+        let initialII = loopInstructions.count
+        let validII = validII(for: schedule, initialII: initialII)
+        if initialII < validII {
+            // Move down the instruction the difference of initialII and validII
+            let moveDistance = validII - initialII
+            
+            // Insert new bundles between loop and bb2
+            let oldLoopIndex = schedule.firstIndex(where: { $0.Branch != nil })!
+            let newLoopIndex = oldLoopIndex + moveDistance
+            var currInsertIndex = oldLoopIndex + 1
+            // Insert empty bundles until we reach the new loop index
+            while (currInsertIndex != newLoopIndex) {
+                schedule.insert(.init(addr: currInsertIndex, block: 1), at: currInsertIndex)
+                currInsertIndex += 1
+            }
+            assert(currInsertIndex == newLoopIndex)
+            
+            // Insert the new bundle with the loop instruction
+            var newBundle = ScheduleRow(addr: newLoopIndex, block: 1)
+            newBundle.Branch = schedule[oldLoopIndex].Branch!
+            schedule.insert(newBundle, at: newLoopIndex)
+            
+            // Remove the branch instruction from old position
+            schedule[oldLoopIndex].Mem = nil
+        }
+        return schedule
+    }
+    
+    private func validII(for schedule: Schedule, initialII: Int) -> Int {
+        let loopInstructions = schedule.filter { $0.block == 1 }
+        var II = initialII
+        while !equationHolds(forLoopInstructions: loopInstructions, II: II) {
+            print("Invalid schedule for II \(II)")
+
+            // Increment II until we find a valid one
+            II += 1
+        }
+        print("Valid schedule for II=\(II) ✅")
+        return II
+    }
 
     /// Check if equation holds for all interloop instructions. If not, increase II and try again
     private func equationHolds(forLoopInstructions schedule: Schedule, II: Int) -> Bool {
@@ -155,6 +188,7 @@ struct Scheduler {
     }
 
     private func equationHolds(for entries: [(Address, ExecutionUnit)], II: Int) -> Bool {
+        // Filter out those with interloop dependencies
         guard entries.count > 1 else { return true }
         
         func S(_ entry: (Address, ExecutionUnit)) -> Int {

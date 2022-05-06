@@ -25,7 +25,7 @@ struct App {
         let schedule = Scheduler().schedule(using: depTable)
         
         // loop - Perform Register allocation
-        let allocatedTable = RegisterAllocator().alloc_b(schedule: schedule, depTable: depTable)
+        let allocatedTable = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
         
         // MARK: loop – Register Allocation (alloc_b)
         // Output: extended schedule table with register allocated

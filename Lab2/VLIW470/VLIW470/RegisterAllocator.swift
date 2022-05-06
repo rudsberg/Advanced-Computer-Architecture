@@ -8,16 +8,19 @@
 import Foundation
 
 struct RegisterAllocator {
-    func alloc_b(schedule: Schedule, depTable: DependencyTable) -> AllocatedTable {
+    let depTable: DependencyTable
+    
+    func alloc_b(schedule: Schedule) -> AllocatedTable {
         var at = createInitialAllocTable(schedule: schedule, depTable: depTable)
         
         // Phase 1: Allocate fresh unique registers to each instruction producing a new value
         // Output: all destinations registers specified
-        at = allocFreshRegisters(to: at)
+        at = allocFreshRegisters(at)
         
         // Phase 2: Link each operand to the registers newly allocated in phase 1
         // If two dependencies, must be in bb0 and bb1, then use register of bb0. Incorrectness resolved in phase 3.
         // Output: all operand registers specified
+        at = linkRegisters(at)
         
         // Phase 3: Fix the interloop dependencies
         // View - see loop body as a function and interloop dependencies as function parameters.
@@ -28,7 +31,7 @@ struct RegisterAllocator {
         // be checked to not be violated.
         
         print("\n======= alloc_b allocation =======")
-        at.enumerated().forEach{ (addr, x) in
+        at.table.enumerated().forEach{ (addr, x) in
             print("\(addr) | ALU0=\(x.ALU0.instr), ALU1=\(x.ALU1.instr), Mult=\(x.Mult.instr), Mem=\(x.Mem.instr), Branch=\(x.Branch.instr)")
         }
         
@@ -37,7 +40,7 @@ struct RegisterAllocator {
     
     /// Maps schedule to alloc table, containing the instructions rather than only their original address
     private func createInitialAllocTable(schedule: Schedule, depTable: DependencyTable) -> AllocatedTable {
-        schedule.map {
+        let table: [RegisterAllocRow] = schedule.map {
             func find(_ addr: Int?, _ unit: ExecutionUnit) -> RegisterAllocEntry {
                 if let addr = addr {
                     return .init(execUnit: unit, instr: depTable[addr].instr)
@@ -55,31 +58,85 @@ struct RegisterAllocator {
                 Branch: find($0.Branch, .Branch)
             )
         }
+        return .init(table: table, renamedRegs: [])
     }
     
-    private func allocFreshRegisters(to allocTable: AllocatedTable) -> AllocatedTable {
+    private func allocFreshRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         var regCounter = 1
-        allocTable.enumerated().forEach { (bIndex, b) in
+        allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 if let instr = entry.instr, instr.isProducingInstruction {
                     // Allocate new fresh register
                     let newReg = "\(regCounter)"
+                    var oldReg: String! = ""
                     switch entry.execUnit {
                     case .ALU(let i):
                         if i == 0 {
-                            at[bIndex].ALU0.instr?.destReg = newReg
+                            oldReg = at.table[bIndex].ALU0.instr?.destReg
+                            at.table[bIndex].ALU0.instr?.destReg = newReg
                         } else {
-                            at[bIndex].ALU1.instr?.destReg = newReg
+                            oldReg = at.table[bIndex].ALU1.instr?.destReg
+                            at.table[bIndex].ALU1.instr?.destReg = newReg
                         }
                     case .Mult:
-                        at[bIndex].Mult.instr?.destReg = newReg
+                        oldReg = at.table[bIndex].Mult.instr?.destReg
+                        at.table[bIndex].Mult.instr?.destReg = newReg
                     case .Mem:
-                        at[bIndex].Mem.instr?.destReg = newReg
+                        oldReg = at.table[bIndex].Mem.instr?.destReg
+                        at.table[bIndex].Mem.instr?.destReg = newReg
                     case .Branch:
-                        at[bIndex].Branch.instr?.destReg = newReg
+                        oldReg = at.table[bIndex].Branch.instr?.destReg
+                        at.table[bIndex].Branch.instr?.destReg = newReg
                     }
+                    at.renamedRegs.append(.init(
+                        block: depTable.first(where: { $0.addr == instr.addr })!.block,
+                        oldReg: oldReg.regToAddr,
+                        newReg: regCounter
+                    ))
                     regCounter += 1
+                }
+            }
+        }
+        return at
+    }
+    
+    private func linkRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
+        // All readRegs need to be recomputed.
+        var at = allocTable
+        print("renamed regs: ", at.renamedRegs)
+        allocTable.table.enumerated().forEach { (bIndex, b) in
+            [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
+                if let instr = entry.instr, let readRegs = instr.readRegs, !readRegs.isEmpty  {
+                    // Rename each read register
+                    // Find what readReg was renamed to
+                    var newReg: Int!
+                    // readRegs are the NEW regs, check renamed regs for those that have match
+                    // and return the old regs
+                    var renamedRegs = allocTable.renamedRegs
+                        .filter { readRegs.contains($0.newReg.toReg) }
+                        .map { $0.oldReg.toReg }
+//                    assert(newRegs.count <= 2)
+//                    if newRegs.count == 2 {
+//                        newReg = newRegs.first(where: { $0.block == 0 })!.oldReg
+//                    } else {
+//                        newReg = newRegs[0].oldReg
+//                    }
+//
+//                    switch entry.execUnit {
+//                    case .ALU(let i):
+//                        if i == 1 {
+//                            at.table[bIndex].ALU0.instr?.readRegs?[ri] = newReg
+//                        } else {
+//
+//                        }
+//                    case .Mult:
+//                        <#code#>
+//                    case .Mem:
+//                        <#code#>
+//                    case .Branch:
+//                        <#code#>
+//                    }
                 }
             }
         }

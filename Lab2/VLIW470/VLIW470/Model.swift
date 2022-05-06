@@ -8,9 +8,20 @@
 import Foundation
 
 typealias Program = [Instruction]
-typealias AllocatedTable = [RegisterAllocRow]
 typealias DependencyTable = [DependencyTableEntry]
 typealias Schedule = [ScheduleRow]
+
+struct AllocatedTable {
+    var table: [RegisterAllocRow]
+    /// Collects the registers we have renamed. (Old, New)
+    var renamedRegs: [RenamedReg]
+}
+
+struct RenamedReg {
+    let block: Int
+    let oldReg: Address
+    let newReg: Address
+}
 
 struct RegisterAllocRow {
     let addr: Address
@@ -52,14 +63,6 @@ enum ExecutionUnit: Equatable {
     case Mult
     case Mem
     case Branch
-    
-//    static func ==(lhs: ExecutionUnit, rhs: ExecutionUnit) -> Bool {
-//        if case let ExecutionUnit.ALU(i1) = lhs, case let ExecutionUnit.ALU(i2) = rhs {
-//            return i1 == i2
-//        } else {
-//            return lhs == .Mem && rhs == .Mem || lhs == .Mult && rhs == .Mult || lhs == .Branch && rhs == .Branch
-//        }
-//    }
 }
 
 typealias Address = Int
@@ -80,7 +83,7 @@ struct ScheduleRow: CustomStringConvertible {
 protocol Instruction: CustomStringConvertible {
     var name: String { get }
     var destReg: String? { get set }
-    var readRegs: [String]? { get }
+    var readRegs: [String]? { get set }
     var addr: Int { get }
 }
 
@@ -101,13 +104,19 @@ struct ArithmeticInstruction: Instruction {
         set { self.dest = newValue != nil ? Int(newValue!)! : self.dest }
     }
     var readRegs: [String]? {
-        [opA, opB].map { $0.toReg }
+        get { [opA, opB].map { $0.toReg } }
+        set {
+            if let readRegs = newValue {
+                opA = readRegs[0].regToAddr
+                opB = readRegs[1].regToAddr
+            }
+        }
     }
     
     let mnemonic: ArithmeticInstructionType
     var dest: Int
-    let opA: Int
-    let opB: Int // or immediate
+    var opA: Int
+    var opB: Int // or immediate
 }
 
 enum ArithmeticInstructionType: String {
@@ -128,11 +137,27 @@ struct MemoryInstruction: Instruction {
         set { self.destOrSource = mnemonic == .ld ? (newValue != nil ? Int(newValue!)! : self.destOrSource) : self.destOrSource }
     }
     var readRegs: [String]? {
-        let forBoth = [(imm + loadStoreAddr).toReg]
-        if mnemonic == .st {
-            return forBoth + [destOrSource.toReg]
-        } else {
-            return forBoth
+        get {
+            let forBoth = [(imm + loadStoreAddr).toReg]
+            if mnemonic == .st {
+                return forBoth + [destOrSource.toReg]
+            } else {
+                return forBoth
+            }
+        }
+        set {
+            if let readRegs = newValue {
+                if mnemonic == .st {
+                    // TODO: what about immediate????
+                    assert(readRegs.count == 2, "[dest, storeaddr]")
+                    destOrSource = readRegs[0].regToAddr
+                    loadStoreAddr = readRegs[1].regToAddr
+                } else {
+                    // TODO: what about immediate????
+                    assert(readRegs.count == 1, "[storeaddr]")
+                    loadStoreAddr = readRegs[0].regToAddr
+                }
+            }
         }
     }
     
@@ -158,7 +183,8 @@ struct LoopInstruction: Instruction {
         set {}
     }
     var readRegs: [String]? {
-        nil
+        get { nil }
+        set {}
     }
     
     let type: LoopInstructionType
@@ -180,7 +206,8 @@ struct NoOp: Instruction {
         set {}
     }
     var readRegs: [String]? {
-        nil
+        get { nil }
+        set {}
     }
 }
 
@@ -195,13 +222,19 @@ struct MoveInstruction: Instruction {
         set { reg = reg == -1 || reg == -2 ? reg : (newValue != nil ? Int(newValue!)! : self.reg) }
     }
     var readRegs: [String]? {
-        type == .setDestRegWithSourceReg ? [val.toReg] : nil
+        get { type == .setDestRegWithSourceReg ? [val.toReg] : nil }
+        set {
+            if type == .setDestRegWithSourceReg {
+                assert(newValue?.count == 1)
+                val = newValue![0].regToAddr
+            }
+        }
     }
     
     let type: MoveInstructionType
     var reg: Int
     // bool, imm, or source
-    let val: Int
+    var val: Int
 }
 
 enum MoveInstructionType {
@@ -219,7 +252,11 @@ extension Int {
 
 extension String {
     var regToAddr: Int {
-        Int(dropFirst())!
+        if self.first == "x" {
+            return Int(dropFirst())!
+        } else {
+            return Int(self)!
+        }
     }
 }
 

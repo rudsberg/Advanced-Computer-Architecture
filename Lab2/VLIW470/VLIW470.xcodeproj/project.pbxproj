@@ -56,6 +56,7 @@
 		F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterAllocator.swift; sourceTree = "<group>"; };
 		F2C207ED2823A814000E5876 /* VLIW470UnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VLIW470UnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2C207EF2823A814000E5876 /* VLIW470UnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VLIW470UnitTests.swift; sourceTree = "<group>"; };
+		F2FF9DC12825742D0036C13E /* test3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = test3.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +122,7 @@
 				F2703EAF282029730016D96C /* vliwsimple.json */,
 				F294D8EA2823AEBE00916BFD /* test.json */,
 				F294D8EB2823B35A00916BFD /* test2.json */,
+				F2FF9DC12825742D0036C13E /* test3.json */,
 			);
 			path = resources;
 			sourceTree = "<group>";
