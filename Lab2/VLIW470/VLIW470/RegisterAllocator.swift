@@ -20,7 +20,6 @@ struct RegisterAllocator {
         // Phase 2: Link each operand to the registers newly allocated in phase 1
         // If two dependencies, must be in bb0 and bb1, then use register of bb0. Incorrectness resolved in phase 3.
         // Output: all operand registers specified
-        // TODO: ask for the last store, "for two producers then pick bb0, we ensure it's only from bb0 and bb1"
         at = linkRegisters(at)
         
         // Phase 3: Fix the interloop dependencies
@@ -144,15 +143,15 @@ struct RegisterAllocator {
             .map { ($0.block, $0.newReg.toReg) }
         assert(newRegs.count <= 2)
         if newRegs.count == 2 {
-            return newRegs.first(where: { $0.0 == 0 })!.1
-//            if block == 1 {
-        // TODO: what's the intention to do here???
-//                // return the one from bb0
-//                return newRegs.first(where: { $0.0 == 0 })!.1
-//            } else {
-//                // return the one from bb1
-//                return newRegs.first(where: { $0.0 == 1 })!.1
-//            }
+//            return newRegs.first(where: { $0.0 == 0 })!.1
+            if block == 1 {
+         // TODO: what's the intention to do here???
+                // return the one from bb0
+                return newRegs.first(where: { $0.0 == 0 })!.1
+            } else {
+                // return the one from bb1
+                return newRegs.first(where: { $0.0 == 1 })!.1
+            }
         } else {
             return newRegs[0].1
         }
