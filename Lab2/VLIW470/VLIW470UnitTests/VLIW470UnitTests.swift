@@ -8,6 +8,7 @@
 import XCTest
 
 class VLIW470UnitTests: XCTestCase {
+    private let folderPath = "/Users/joelrudsberg/Desktop/EPFL/adv-comp-arch/Advanced-Computer-Architecture/Lab2/VLIW470/VLIW470/resources"
 
     func testScheduler1() throws {
         /*
@@ -148,12 +149,27 @@ class VLIW470UnitTests: XCTestCase {
         
     }
     
+    func testVLIWSimple() throws {
+        FileIOController.folderPath = folderPath
+        let config = Config(programFile: "handout.json", outputFile: "handout-loop.json")
+        let app = App(config: config)
+        try app.run()
+        
+        let output = try FileIOController.shared.read([[String]].self, documentName: "handout-loop.json")
+        let oracle = try FileIOController.shared.read([[String]].self, documentName: "vliwsimple.json")
+        
+        XCTAssertEqual(output.count, oracle.count)
+        zip(output, oracle).forEach { (r1, r2) in
+            XCTAssertEqual(r1, r2.map { $0.trimmingCharacters(in: .whitespaces) })
+        }
+    }
+    
     private func executionUnitsEmpty(bundle: ScheduleRow) {
         XCTAssertTrue(bundle.ALU0 == nil && bundle.ALU1 == nil && bundle.Mult == nil && bundle.Mem == nil && bundle.Branch == nil)
     }
     
     private func createProgram(fromFile file: String) throws -> Program {
-        FileIOController.folderPath = "/Users/joelrudsberg/Desktop/EPFL/adv-comp-arch/Advanced-Computer-Architecture/Lab2/VLIW470/VLIW470/resources"
+        FileIOController.folderPath = folderPath
         let program = try Parser().parseInstructions(fromFile: file)
         return program
     }
