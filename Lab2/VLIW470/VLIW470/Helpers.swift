@@ -25,6 +25,19 @@ extension Optional where Wrapped == Int {
     }
 }
 
+extension String {
+    /// If hex converts to base 10
+    var toNum: String {
+        let str = self.map { String($0) }
+        // x is removed automatically
+        if str.count >= 2 && str[0] == "0" {
+            return "\(Int(dropFirst(), radix: 16)!)"
+        } else {
+            return self
+        }
+    }
+}
+
 extension Sequence where Element: Hashable {
     func uniqued() -> [Element] {
         var set = Set<Element>()
@@ -76,30 +89,17 @@ class FileIOController {
     }
 }
 
-//struct Logger {
-//    func updateLog(with state: State, documentName: String, deleteExistingFile: Bool = false) throws {
-//        let fileIO = FileIOController.shared
-//        
-//        if (fileIO.fileExist(documentName: documentName) && !deleteExistingFile) {
-//            // Get current state, append current state and write update
-//            var newState = try fileIO.read([State].self, documentName: documentName)
-//            newState.append(state)
-//            // Transforms all 'addi' to 'add'
-//            newState.enumerated().forEach { (i, state) in
-//                newState[i].IntegerQueue.enumerated().forEach { (j, item) in
-//                    if (item.OpCode == InstructionType.addi.rawValue) {
-//                        newState[i].IntegerQueue[j].OpCode = InstructionType.add.rawValue
-//                    }
-//                }
-//            }
-//            try fileIO.write(newState, toDocumentNamed: documentName)
-//        } else {
-//            // Create file and write current state
-//            fileIO.createFile(documentName: documentName)
-//            try fileIO.write([state], toDocumentNamed: documentName)
-//        }
-//    }
-//}
+struct Logger {
+    func log(allocTable: AllocatedTable, documentName: String) throws {
+        let rows: [[String]] = allocTable.table.map {
+            let instrs: [Instruction?] = [$0.ALU0.instr, $0.ALU1.instr, $0.Mult.instr, $0.Mem.instr, $0.Branch.instr]
+            return instrs.map { $0.string }
+        }
+        let fileIO = FileIOController.shared
+        fileIO.createFile(documentName: documentName)
+        try fileIO.write(rows, toDocumentNamed: documentName)
+    }
+}
 
 struct Parser {
     func parseInstructions(fromFile file: String) throws -> Program {
@@ -130,11 +130,12 @@ struct Parser {
         let p = strings
         switch (p.first!) {
         case "add", "addi", "sub", "mulu":
-            return ArithmeticInstruction(addr: addr, mnemonic: .init(rawValue: p[0])!, dest: Int(p[1])!, opA: Int(p[2])!, opB: Int(p[3])!)
+            
+            return ArithmeticInstruction(addr: addr, mnemonic: .init(rawValue: p[0])!, dest: Int(p[1].toNum)!, opA: Int(p[2].toNum)!, opB: Int(p[3].toNum)!)
         case "ld", "st":
-            return MemoryInstruction(addr: addr, mnemonic: .init(rawValue: p[0])!, destOrSource: Int(p[1])!, imm: Int(p[2])!, loadStoreAddr: Int(p[3])!)
+            return MemoryInstruction(addr: addr, mnemonic: .init(rawValue: p[0])!, destOrSource: Int(p[1].toNum)!, imm: Int(p[2].toNum)!, loadStoreAddr: Int(p[3].toNum)!)
         case "loop", "loop.pip":
-            return LoopInstruction(addr: addr, type: .init(rawValue: p[0])!, loopStart: Int(p[1])!)
+            return LoopInstruction(addr: addr, type: .init(rawValue: p[0])!, loopStart: Int(p[1].toNum)!)
         case "nop":
             return NoOp(addr: addr)
         case "mov":
@@ -150,8 +151,17 @@ struct Parser {
                 type = .setDestRegWithImmediate
             }
             
+            var val: Int!
+            if p[2] == "true" {
+                val = 1
+            } else if p[2] == "false" {
+                val = 0
+            } else {
+                val = Int(p[2].toNum)!
+            }
+            
             let reg = v == "LC" ? -1 : (v == "EC" ? -2 : Int(p[1])!)
-            return MoveInstruction(addr: addr, type: type, reg: reg, val: Int(p[2])!)
+            return MoveInstruction(addr: addr, type: type, reg: reg, val: val)
         default:
             fatalError("No matching instruction")
         }

@@ -9,6 +9,7 @@ import Foundation
 
 struct Config {
     let programFile: String
+    let outputFile: String
 }
 
 struct App {
@@ -26,6 +27,10 @@ struct App {
         
         // loop - Perform Register allocation
         let allocatedTable = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
+        
+        // loop - print the results
+        let logger = Logger()
+        try logger.log(allocTable: allocatedTable, documentName: config.outputFile)
         
         // MARK: loop – Register Allocation (alloc_b)
         // Output: extended schedule table with register allocated

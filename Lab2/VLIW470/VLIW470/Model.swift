@@ -86,6 +86,7 @@ protocol Instruction: CustomStringConvertible {
     var destReg: String? { get set }
     var readRegs: [String]? { get set }
     var addr: Int { get }
+    var print: String { get }
 }
 
 extension Instruction {
@@ -95,7 +96,16 @@ extension Instruction {
     }
 }
 
+extension Optional where Wrapped == Instruction {
+    var string: String {
+        self == nil ? "nop" : self!.print
+    }
+}
+
 struct ArithmeticInstruction: Instruction {
+    var print: String {
+        "\(mnemonic.rawValue) \(dest.toReg), \(opA.toReg), \(mnemonic == .addi ? "\(opB)" : opB.toReg)"
+    }
     var addr: Int
     var name: String {
         mnemonic.rawValue
@@ -139,6 +149,9 @@ enum ArithmeticInstructionType: String {
 }
 
 struct MemoryInstruction: Instruction {
+    var print: String {
+        "\(mnemonic.rawValue) \(destOrSource.toReg), \(imm)(\(loadStoreAddr.toReg))"
+    }
     var addr: Int
     var name: String {
         mnemonic.rawValue
@@ -185,6 +198,9 @@ enum MemoryInstructionType: String {
 }
 
 struct LoopInstruction: Instruction {
+    var print: String {
+        "\(type.rawValue) \(loopStart)"
+    }
     var addr: Int
     var name: String {
         type.rawValue
@@ -208,6 +224,9 @@ enum LoopInstructionType: String {
 }
 
 struct NoOp: Instruction {
+    var print: String {
+        name
+    }
     var addr: Int
     var name: String {
         "noop"
@@ -223,6 +242,18 @@ struct NoOp: Instruction {
 }
 
 struct MoveInstruction: Instruction {
+    var print: String {
+        var arg2: String!
+        switch type {
+        case .setPredicateReg:
+            arg2 = val == 0 ? "false" : "true"
+        case .setSpecialRegWithImmediate, .setDestRegWithImmediate:
+            arg2 = "\(val)"
+        case .setDestRegWithSourceReg:
+            arg2 = val.toReg
+        }
+        return "\(name) \(destReg!), \(arg2!)"
+    }
     var addr: Int
     var name: String {
         "mov"

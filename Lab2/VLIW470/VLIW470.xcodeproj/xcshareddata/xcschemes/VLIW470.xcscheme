@@ -69,6 +69,10 @@
             argument = "handout.json"
             isEnabled = "YES">
          </CommandLineArgument>
+         <CommandLineArgument
+            argument = "handout-loop.json"
+            isEnabled = "YES">
+         </CommandLineArgument>
       </CommandLineArguments>
    </LaunchAction>
    <ProfileAction

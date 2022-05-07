@@ -22,11 +22,6 @@ struct RegisterAllocator {
         // Output: all operand registers specified
         at = linkRegisters(at)
         
-        print("\n======= alloc_b allocation =======")
-        at.table.enumerated().forEach{ (addr, x) in
-            print("\(addr) | ALU0=\(x.ALU0.instr), ALU1=\(x.ALU1.instr), Mult=\(x.Mult.instr), Mem=\(x.Mem.instr), Branch=\(x.Branch.instr)")
-        }
-        
         // Phase 3: Fix the interloop dependencies
         at = fixInterLoopDep(at)
         
@@ -181,7 +176,7 @@ struct RegisterAllocator {
                 return depTable[addr].destReg!
             }
         // Remove duplicates
-        oldOverwrittenRegs = oldOverwrittenRegs.uniqued()   
+        oldOverwrittenRegs = oldOverwrittenRegs.uniqued()
         
         // Map to what regs now are assigned to
         var newOverwrittenRegs = oldOverwrittenRegs.map { r in
@@ -199,15 +194,6 @@ struct RegisterAllocator {
         // sourceRegs point to instructions in loop and must respect dependencies
         // Try insert at last bundle - if bundle ALUs busy or instruction dep is broken,
         // create new bundle, move down branch, and try again.
-        
-        // Sort movs such that ones with lowest dependency index are first
-        // TODO:
-        //        movs = movs.sorted(by: { (_, src1), (_, src2) in
-        //            let interLoopDep1 = depTable
-        //                .filter { $0.block == 1 && $0.interloopDep == 2 }
-        //                .map { max($0.interloopDep[0].regToAddr, $0.interloopDep[1].regToAddr) }
-        //        })
-        
         // Only mul instruction may cause movs depedency to be violated.
         // Check if mult exists such that they need to be moved down
         let dependencies: [(String, Int)] = at.table
