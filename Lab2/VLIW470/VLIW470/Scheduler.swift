@@ -35,7 +35,7 @@ struct Scheduler {
         return schedule
     }
     
-    /// Finds earliest possible bundle to schedule entry within it's block (bb0/1/2). Does not execution units if they are busy or not.
+    /// Finds earliest possible bundle to schedule entry within it's block (bb0/1/2). Does not check if execution units are busy or not.
     private func earliestScheduledStage(for entry: DependencyTableEntry, in schedule: Schedule) -> Int {
         if entry.instr.execUnit == .Branch {
             return lastAddrInBlock(block: 1, in: schedule)

@@ -24,6 +24,7 @@ struct RenamedReg {
 }
 
 struct RegisterAllocRow {
+    let block: Int
     let addr: Address
     var ALU0 = RegisterAllocEntry(execUnit: .ALU(0))
     var ALU1 = RegisterAllocEntry(execUnit: .ALU(1))

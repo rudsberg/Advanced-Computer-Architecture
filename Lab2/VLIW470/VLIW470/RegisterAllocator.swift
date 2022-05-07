@@ -22,13 +22,13 @@ struct RegisterAllocator {
         // Output: all operand registers specified
         at = linkRegisters(at)
         
+        print("\n======= alloc_b allocation =======")
+        at.table.enumerated().forEach{ (addr, x) in
+            print("\(addr) | ALU0=\(x.ALU0.instr), ALU1=\(x.ALU1.instr), Mult=\(x.Mult.instr), Mem=\(x.Mem.instr), Branch=\(x.Branch.instr)")
+        }
+        
         // Phase 3: Fix the interloop dependencies
-        // View - see loop body as a function and interloop dependencies as function parameters.
-        // Since we choose dest register r produced in bb0 as operands for consumers in bb1 (for those with dep in bb0)
-        // those registers are effectively like function arguments. Thus, values produced in bb1 that actually point to
-        // same register as in bb0 must be moved to r to respect the 'calling conventions'. Do this by *inserting* mov
-        // instructions at last bundle of loop, creating space if needed (pushing down loop). NOTE: instruction dep must
-        // be checked to not be violated.
+        at = fixInterLoopDep(at)
         
         print("\n======= alloc_b allocation =======")
         at.table.enumerated().forEach{ (addr, x) in
@@ -50,6 +50,7 @@ struct RegisterAllocator {
             }
             
             return .init(
+                block: $0.block,
                 addr: $0.addr,
                 ALU0: find($0.ALU0, .ALU(0)),
                 ALU1: find($0.ALU1, .ALU(1)),
@@ -115,7 +116,7 @@ struct RegisterAllocator {
                     // and return the old regs
                     let block = depTable.first(where: { $0.addr == instr.addr })!.block
                     let newRegs = readRegs.map { oldRegToNewFreshReg(oldReg: $0, block: block, allocTable: allocTable) }
-
+                    
                     switch entry.execUnit {
                     case .ALU(let i):
                         if i == 0 {
@@ -143,9 +144,9 @@ struct RegisterAllocator {
             .map { ($0.block, $0.newReg.toReg) }
         assert(newRegs.count <= 2)
         if newRegs.count == 2 {
-//            return newRegs.first(where: { $0.0 == 0 })!.1
+            //            return newRegs.first(where: { $0.0 == 0 })!.1
             if block == 1 {
-         // TODO: what's the intention to do here???
+                // TODO: what's the intention to do here???
                 // return the one from bb0
                 return newRegs.first(where: { $0.0 == 0 })!.1
             } else {
@@ -155,5 +156,111 @@ struct RegisterAllocator {
         } else {
             return newRegs[0].1
         }
+    }
+    
+    /// View - see loop body as a function and interloop dependencies as function parameters.
+    /// Since we choose dest register r produced in bb0 as operands for consumers in bb1 (for those with dep in bb0)
+    /// those registers are effectively like function arguments. Thus, values produced in bb1 that actually point to
+    /// same register as in bb0 must be moved to r to respect the 'calling conventions'. Do this by *inserting* mov
+    /// instructions at last bundle of loop, creating space if needed (pushing down loop). NOTE: instruction dep must
+    /// be checked to not be violated.
+    private func fixInterLoopDep(_ allocTable: AllocatedTable) -> AllocatedTable {
+        var at = allocTable
+        
+        // Find registers that are overwritten in loop, ie interloop dependencies where one must be from bb0
+        let bb0 = depTable
+            .filter { $0.block == 0 && $0.instr.isProducingInstruction }
+            .compactMap { $0.destReg?.regToAddr }
+        var oldOverwrittenRegs = depTable
+        // If in block 1 and has two interloop dep, then it is of interest
+            .filter { $0.block == 1 && $0.interloopDep.count == 2 }
+        // Map it to a reg
+            .map { loopInstr -> String in
+                // The lower of the two deps is the one in bb0
+                let addr = max(loopInstr.interloopDep[0].regToAddr, loopInstr.interloopDep[1].regToAddr)
+                return depTable[addr].destReg!
+            }
+        // Remove duplicates
+        oldOverwrittenRegs = oldOverwrittenRegs.uniqued()   
+        
+        // Map to what regs now are assigned to
+        var newOverwrittenRegs = oldOverwrittenRegs.map { r in
+            at.renamedRegs.first(where: { $0.oldReg == r.regToAddr })!.newReg.toReg
+        }
+        newOverwrittenRegs = newOverwrittenRegs.uniqued()
+        
+        // It's the second entry in the renamed regs matching the old overwritten regs
+        let sourceRegs = oldOverwrittenRegs.map { oldReg in
+            at.renamedRegs.filter { $0.oldReg.toReg == oldReg }[1].newReg.toReg
+        }
+        
+        // Schedule the mov instructions.
+        assert(newOverwrittenRegs.count == sourceRegs.count)
+        // sourceRegs point to instructions in loop and must respect dependencies
+        // Try insert at last bundle - if bundle ALUs busy or instruction dep is broken,
+        // create new bundle, move down branch, and try again.
+        
+        // Sort movs such that ones with lowest dependency index are first
+        // TODO:
+        //        movs = movs.sorted(by: { (_, src1), (_, src2) in
+        //            let interLoopDep1 = depTable
+        //                .filter { $0.block == 1 && $0.interloopDep == 2 }
+        //                .map { max($0.interloopDep[0].regToAddr, $0.interloopDep[1].regToAddr) }
+        //        })
+        
+        // Only mul instruction may cause movs depedency to be violated.
+        // Check if mult exists such that they need to be moved down
+        let dependencies: [(String, Int)] = at.table
+            .filter { $0.block == 1 && $0.Mult.instr != nil &&
+                $0.Mult.instr!.isProducingInstruction && sourceRegs.contains($0.Mult.instr!.destReg!) }
+            .map { entry in
+                (sourceRegs.first(where: { $0 == entry.Mult.instr!.destReg! })!, entry.addr + 3) }
+        
+        // (String : destReg, String : srcReg, Int? : earliest possible schedule addr)
+        let movs = zip(newOverwrittenRegs, sourceRegs).map { tup -> (String, String, Int?) in
+            let src = tup.1
+            let earliestAddr = dependencies.first { (reg, addr) in
+                reg == src
+            }?.1
+            return (tup.0, tup.1, earliestAddr)
+        }
+        
+        movs.forEach { mov in
+            var currAddr = at.table.first(where: { $0.Branch.instr != nil })!.addr
+            
+            // Check dependency
+            while mov.2 != nil && mov.2! > currAddr {
+                at = insertBundleAndHandleJump(at, startAddr: currAddr)
+                currAddr += 1
+            }
+            
+            // Now dependency dealt with, still risk ALU is in use, check then assign
+            let movInstr = MoveInstruction(addr: currAddr, type: .setDestRegWithSourceReg, reg: mov.0.regToAddr, val: mov.1.regToAddr)
+            if at.table[currAddr].ALU0.instr == nil {
+                at.table[currAddr].ALU0.instr = movInstr
+            } else if at.table[currAddr].ALU1.instr == nil {
+                at.table[currAddr].ALU1.instr = movInstr
+            } else {
+                // Insert one new bundle then add instruction
+                at = insertBundleAndHandleJump(at, startAddr: currAddr)
+                at.table[currAddr + 1].ALU0.instr = movInstr
+            }
+        }
+        
+        return at
+    }
+    
+    private func insertBundleAndHandleJump(_ allocTable: AllocatedTable, startAddr currAddr: Int) -> AllocatedTable {
+        var at = allocTable
+        
+        // Insert new bundle
+        var newBundle = RegisterAllocRow(block: 1, addr: currAddr + 1)
+        newBundle.Branch = at.table[currAddr].Branch
+        at.table.insert(newBundle, at: currAddr + 1)
+        
+        // Remove loop statement from last bundle
+        at.table[currAddr].Branch.instr = nil
+        
+        return at
     }
 }
