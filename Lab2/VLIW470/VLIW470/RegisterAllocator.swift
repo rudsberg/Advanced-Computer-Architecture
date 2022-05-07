@@ -13,6 +13,8 @@ struct RegisterAllocator {
     func alloc_b(schedule: Schedule) -> AllocatedTable {
         var at = createInitialAllocTable(schedule: schedule, depTable: depTable)
         
+        
+        
         // Phase 1: Allocate fresh unique registers to each instruction producing a new value
         // Output: all destinations registers specified
         at = allocFreshRegisters(at)
@@ -35,7 +37,7 @@ struct RegisterAllocator {
     
     /// Maps schedule to alloc table, containing the instructions rather than only their original address
     private func createInitialAllocTable(schedule: Schedule, depTable: DependencyTable) -> AllocatedTable {
-        let table: [RegisterAllocRow] = schedule.map {
+        var table: [RegisterAllocRow] = schedule.map {
             func find(_ addr: Int?, _ unit: ExecutionUnit) -> RegisterAllocEntry {
                 if let addr = addr {
                     return .init(execUnit: unit, instr: depTable[addr].instr)
@@ -54,6 +56,14 @@ struct RegisterAllocator {
                 Branch: find($0.Branch, .Branch)
             )
         }
+        
+        // Update the loop address
+        if let i = table.firstIndex(where: { $0.Branch.instr != nil }) {
+            var loopInstr = table[i].Branch.instr as! LoopInstruction
+            loopInstr.loopStart = table.firstIndex(where: { $0.block == 1 })!
+            table[i].Branch.instr = loopInstr
+        }
+        
         return .init(table: table, renamedRegs: [])
     }
     
@@ -85,7 +95,6 @@ struct RegisterAllocator {
                         oldReg = at.table[bIndex].Branch.instr?.destReg
                         at.table[bIndex].Branch.instr?.destReg = newReg
                     }
-                    print("oldreg ", oldReg)
                     at.renamedRegs.append(.init(
                         block: depTable.first(where: { $0.addr == instr.addr })!.block,
                         oldReg: oldReg.regToAddr,
@@ -137,7 +146,7 @@ struct RegisterAllocator {
         let newRegs = allocTable.renamedRegs
             .filter { oldReg.regToAddr == $0.oldReg }
             .map { ($0.block, $0.newReg.toReg) }
-        assert(newRegs.count <= 2)
+//        assert(newRegs.count <= 2)
         if newRegs.count == 2 {
             //            return newRegs.first(where: { $0.0 == 0 })!.1
             if block == 1 {

@@ -215,7 +215,7 @@ struct LoopInstruction: Instruction {
     }
     
     let type: LoopInstructionType
-    let loopStart: Int
+    var loopStart: Int
 }
 
 enum LoopInstructionType: String {

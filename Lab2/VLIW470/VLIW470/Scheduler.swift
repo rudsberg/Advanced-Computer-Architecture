@@ -16,6 +16,9 @@ struct Scheduler {
         var schedule = Schedule()
         schedule = createSchedule(entries: depTable)
         
+        // Update the loop addr
+//        schedule = updateLoopInstr(in: schedule)
+        
         // Ensures II is obeyed
         schedule = recomputeIfNeeded(schedule: schedule)
         
@@ -91,13 +94,18 @@ struct Scheduler {
             } else {
                 i += 1
             }
-            
-            // TODO: remove for submission
-            if (i > 10000) { fatalError("infinte loop...") }
         }
 
         return schedule
     }
+    
+//    private func updateLoopInstr(in schedule: Schedule) -> Schedule {
+//        var schedule = schedule
+//        if let i = schedule.firstIndex(where: { $0.Branch != nil }) {
+//            schedule[i].Branch = schedule.firstIndex(where: { $0.block == 1 })
+//        }
+//        return schedule
+//    }
 
     private func update(_ row: ScheduleRow, ifCanBeHandled entry: DependencyTableEntry) -> ScheduleRow? {
         var row = row
