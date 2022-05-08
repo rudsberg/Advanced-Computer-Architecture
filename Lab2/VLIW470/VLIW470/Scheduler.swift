@@ -9,15 +9,22 @@ import Foundation
 import Algorithms
 
 struct Scheduler {
+    let depTable: DependencyTable
+    
+    // MARK: - loop.pip scheduling
+    func schedule_loop_pip() -> Schedule {
+        var schedule = Schedule()
+        
+        return schedule
+    }
+    
+    // MARK: - loop scheduling
     /// Output: valid schedule table, i.e. what each execution unit should perform each stage for the 3 basic blocks. Addr | ALU0 | ALU1 | Mult | Mem | Branch
     /// Picks instruction in sequential order, checks the dependencies in table, and schedules the instruction in the earliest possible slot
     /// All instructions must obey: S(P) + λ(P) ≤ S(C) + II, if violation, recompute by increasing II
-    func schedule(using depTable: DependencyTable) -> Schedule {
+    func schedule_loop() -> Schedule {
         var schedule = Schedule()
-        schedule = createSchedule(entries: depTable)
-        
-        // Update the loop addr
-//        schedule = updateLoopInstr(in: schedule)
+        schedule = createSchedule()
         
         // Ensures II is obeyed
         schedule = recomputeIfNeeded(schedule: schedule)
@@ -29,16 +36,16 @@ struct Scheduler {
         return schedule
     }
     
-    private func createSchedule(entries: DependencyTable) -> Schedule {
+    private func createSchedule() -> Schedule {
         var schedule = Schedule()
-        entries.forEach { entry in
+        depTable.forEach { entry in
             let stage = earliestScheduledStage(for: entry, in: schedule)
             schedule = addToSchedule(entry, atEarliest: stage, in: schedule)
         }
         return schedule
     }
     
-    /// Finds earliest possible bundle to schedule entry within it's block (bb0/1/2). Does not check if execution units are busy or not.
+    /// Finds earliest possible bundle to schedule entry within it's block (bb0/1/2) by analyzing its dependencies. Does not check if execution units are busy or not.
     private func earliestScheduledStage(for entry: DependencyTableEntry, in schedule: Schedule) -> Int {
         if entry.instr.execUnit == .Branch {
             return lastAddrInBlock(block: 1, in: schedule)
@@ -76,6 +83,7 @@ struct Scheduler {
     }
 
     /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the correct unit. Moves down if occupied until not.
+    /// Assumes index is a valid spot, obeying dependencies.
     private func addToSchedule(_ entry: DependencyTableEntry, atEarliest index: Int, in schedule: Schedule) -> Schedule {
         var schedule = schedule
         var i = index
@@ -90,7 +98,7 @@ struct Scheduler {
             // Check if exec unit slot is available and create an updated row
             if let updatedRow = update(schedule[i], ifCanBeHandled: entry) {
                 schedule[i] = updatedRow
-                return schedule
+                break
             } else {
                 i += 1
             }
@@ -99,14 +107,6 @@ struct Scheduler {
         return schedule
     }
     
-//    private func updateLoopInstr(in schedule: Schedule) -> Schedule {
-//        var schedule = schedule
-//        if let i = schedule.firstIndex(where: { $0.Branch != nil }) {
-//            schedule[i].Branch = schedule.firstIndex(where: { $0.block == 1 })
-//        }
-//        return schedule
-//    }
-
     private func update(_ row: ScheduleRow, ifCanBeHandled entry: DependencyTableEntry) -> ScheduleRow? {
         var row = row
         switch entry.instr.execUnit {
@@ -140,8 +140,7 @@ struct Scheduler {
     /// Recomputes the schedule if needed, depending on the II
     private func recomputeIfNeeded(schedule: Schedule) -> Schedule {
         var schedule = schedule
-        let loopInstructions = schedule.filter { $0.block == 1 }
-        let initialII = loopInstructions.count
+        let initialII = minimalII(depTable: depTable)
         let validII = validII(for: schedule, initialII: initialII)
         if initialII < validII {
             // Move down the instruction the difference of initialII and validII
@@ -169,6 +168,25 @@ struct Scheduler {
         return schedule
     }
     
+    private func minimalII(depTable: DependencyTable) -> Int {
+        guard !depTable.filter({ $0.block == 1 }).isEmpty else {
+            return 0
+        }
+        
+        // ALU, MULT, MEM, BRANCH
+        let numUnits: [Double] = [2, 1, 1, 1]
+        var instrPerExecUnit: [Double] = [0, 0, 0, 0]
+        depTable.filter { $0.block == 1 }.forEach { entry in
+            let instr = entry.instr
+            instrPerExecUnit[instr.execUnit.i] += 1
+        }
+        let res = instrPerExecUnit.enumerated().map { (i, numInstr) in
+            ceil(numInstr / numUnits[i])
+        }.max()!
+        
+        return Int(res)
+    }
+    
     private func validII(for schedule: Schedule, initialII: Int) -> Int {
         let loopInstructions = schedule.filter { $0.block == 1 }
         var II = initialII
@@ -194,7 +212,7 @@ struct Scheduler {
         
         return [iALU0, iALU1, Mult, Mem, Branch].allSatisfy { equationHolds(for: $0, II: II) }
     }
-
+    
     private func equationHolds(for entries: [(Address, ExecutionUnit)], II: Int) -> Bool {
         // Filter out those with interloop dependencies
         guard entries.count > 1 else { return true }

@@ -64,6 +64,19 @@ enum ExecutionUnit: Equatable {
     case Mult
     case Mem
     case Branch
+    
+    var i: Int {
+        switch self {
+        case .ALU(_):
+            return 0
+        case .Mult:
+            return 1
+        case .Mem:
+            return 2
+        case .Branch:
+            return 3
+        }
+    }
 }
 
 typealias Address = Int

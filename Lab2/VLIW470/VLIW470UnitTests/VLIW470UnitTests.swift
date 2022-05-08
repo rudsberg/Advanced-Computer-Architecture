@@ -27,8 +27,8 @@ class VLIW470UnitTests: XCTestCase {
         let db = DependencyBuilder()
         let depTable = db.createTable(fromProgram: program)
         
-        let s = Scheduler()
-        let schedule = s.schedule(using: depTable)
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop()
         
         XCTAssertEqual(schedule.count, 4)
         XCTAssertEqual(schedule[0].ALU0, 0) // A
@@ -51,8 +51,8 @@ class VLIW470UnitTests: XCTestCase {
         let db = DependencyBuilder()
         let depTable = db.createTable(fromProgram: program)
         
-        let s = Scheduler()
-        let schedule = s.schedule(using: depTable)
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop()
         
         XCTAssertEqual(schedule.count, 8)
         XCTAssertEqual(schedule[0].ALU0.toChar, "A") // A
@@ -94,8 +94,8 @@ class VLIW470UnitTests: XCTestCase {
         let db = DependencyBuilder()
         let depTable = db.createTable(fromProgram: program)
         
-        let s = Scheduler()
-        let schedule = s.schedule(using: depTable)
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop()
         
         XCTAssertEqual(schedule.count, 6)
         XCTAssertEqual(schedule[0].ALU0, 0)
@@ -130,8 +130,8 @@ class VLIW470UnitTests: XCTestCase {
         let db = DependencyBuilder()
         let depTable = db.createTable(fromProgram: program)
         
-        let s = Scheduler()
-        let schedule = s.schedule(using: depTable)
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop()
         
         // TODO: 
         XCTAssertEqual(schedule.filter { $0.block == 1 }.count, 3)
@@ -141,8 +141,8 @@ class VLIW470UnitTests: XCTestCase {
         let program = try createProgram(fromFile: "handout.json")
         let db = DependencyBuilder()
         let depTable = db.createTable(fromProgram: program)
-        let s = Scheduler()
-        let schedule = s.schedule(using: depTable)
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop()
         
         let res = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
         let t = res.table
