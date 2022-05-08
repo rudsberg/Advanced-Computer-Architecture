@@ -15,13 +15,18 @@ struct Scheduler {
     func schedule_loop_pip() -> Schedule {
         var schedule = Schedule()
         
-        // Try to schedule starting from smallest II
         var II = minimalII()
         while true {
             if let newSchedule = createSchedulePip(II: II) {
                 print("✅ pip schedule success for II \(II)")
-                schedule = newSchedule
-                break
+                if equationHolds(for: newSchedule, II: II) {
+                    print("✅ for II \(II)")
+                    schedule = newSchedule
+                    break
+                } else {
+                    print("🔴 for II \(II)")
+                    II += 1
+                }
             } else {
                 print("🔴 pip failed schedule for II \(II)")
                 II += 1
@@ -42,7 +47,6 @@ struct Scheduler {
         let loopStages = Int(
             ceil(Double(loopInstr.count) / Double(II))
         )
-        print("num loop stages \(loopStages)")
         
         var hasCreatedLoop = false
         var failed = false
@@ -326,9 +330,8 @@ struct Scheduler {
     }
     
     private func validII(for schedule: Schedule, initialII: Int) -> Int {
-        let loopInstructions = schedule.filter { $0.block == 1 }
         var II = initialII
-        while !equationHolds(forLoopInstructions: loopInstructions, II: II) {
+        while !equationHolds(for: schedule, II: II) {
             print("Invalid schedule for II \(II)")
 
             // Increment II until we find a valid one
@@ -339,8 +342,8 @@ struct Scheduler {
     }
 
     /// Check if equation holds for all interloop instructions. If not, increase II and try again
-    private func equationHolds(forLoopInstructions schedule: Schedule, II: Int) -> Bool {
-        let loopInstructions = schedule
+    private func equationHolds(for schedule: Schedule, II: Int) -> Bool {
+        let loopInstructions = schedule.filter { $0.block == 1 }
         // Group by ALU types
         let iALU0 = loopInstructions.filter { $0.ALU0 != nil }.map { ($0.addr, ExecutionUnit.ALU(0)) }
         let iALU1 = loopInstructions.filter { $0.ALU1 != nil }.map { ($0.addr, ExecutionUnit.ALU(1)) }
