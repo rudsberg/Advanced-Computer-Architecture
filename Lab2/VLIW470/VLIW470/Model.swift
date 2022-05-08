@@ -18,6 +18,8 @@ struct AllocatedTable {
 }
 
 struct RenamedReg {
+    /// Initial program addr
+    let id: Int
     let block: Int
     let oldReg: Address
     let newReg: Address

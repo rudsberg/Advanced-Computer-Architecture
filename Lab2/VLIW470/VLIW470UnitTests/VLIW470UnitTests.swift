@@ -48,8 +48,7 @@ class VLIW470UnitTests: XCTestCase {
     
     func testScheduler2() throws {
         let program = try createProgram(fromFile: "handout.json")
-        let db = DependencyBuilder()
-        let depTable = db.createTable(fromProgram: program)
+        let depTable = DependencyBuilder().createTable(fromProgram: program)
         
         let s = Scheduler(depTable: depTable)
         let schedule = s.schedule_loop()
@@ -156,6 +155,17 @@ class VLIW470UnitTests: XCTestCase {
         let res = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
         let t = res.table
         
+    }
+    
+    func testAlloc_r() throws {
+        let program = try createProgram(fromFile: "handout.json")
+        let db = DependencyBuilder()
+        let depTable = db.createTable(fromProgram: program)
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop_pip()
+        
+        let res = RegisterAllocator(depTable: depTable).alloc_r(schedule: schedule)
+        let t = res.table
     }
     
     func testVLIWSimple() throws {

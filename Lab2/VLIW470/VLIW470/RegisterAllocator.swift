@@ -10,14 +10,75 @@ import Foundation
 struct RegisterAllocator {
     let depTable: DependencyTable
     
+    // MARK: - loop.pip
+    func alloc_r(schedule: Schedule) -> AllocatedTable {
+        var at = createInitialAllocTable(schedule: schedule, depTable: depTable)
+        
+        // Phase 1: allocr allocates fresh unique rotating registers to each instruction producing a new value in BB1
+        at = allocFreshRegisters_r(at, schedule)
+        
+        print("\n======= alloc_r allocation =======")
+        at.table.enumerated().forEach{ (addr, x) in
+            print("\(addr) | ALU0=\(x.ALU0.instr), ALU1=\(x.ALU1.instr), Mult=\(x.Mult.instr), Mem=\(x.Mem.instr), Branch=\(x.Branch.instr)")
+        }
+        
+        return at
+    }
+    
+    private func allocFreshRegisters_r(_ allocTable: AllocatedTable, _ schedule: Schedule) -> AllocatedTable {
+        var at = allocTable
+        // id -> prev reg, id -> new reg
+        let assignJump = schedule.compactMap { $0.stage }.max()!
+        let regs = Array(32...95)
+        var regToAssignNext = regs[0]
+        
+        allocTable.table.enumerated().forEach { (bIndex, b) in
+            [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
+                if let instr = entry.instr, instr.isProducingInstruction {
+                    // Allocate new fresh register
+                    let newReg = "\(regToAssignNext)"
+                    var oldReg: String! = ""
+                    switch entry.execUnit {
+                    case .ALU(let i):
+                        if i == 0 {
+                            oldReg = at.table[bIndex].ALU0.instr?.destReg
+                            at.table[bIndex].ALU0.instr?.destReg = newReg
+                        } else {
+                            oldReg = at.table[bIndex].ALU1.instr?.destReg
+                            at.table[bIndex].ALU1.instr?.destReg = newReg
+                        }
+                    case .Mult:
+                        oldReg = at.table[bIndex].Mult.instr?.destReg
+                        at.table[bIndex].Mult.instr?.destReg = newReg
+                    case .Mem:
+                        oldReg = at.table[bIndex].Mem.instr?.destReg
+                        at.table[bIndex].Mem.instr?.destReg = newReg
+                    case .Branch:
+                        oldReg = at.table[bIndex].Branch.instr?.destReg
+                        at.table[bIndex].Branch.instr?.destReg = newReg
+                    }
+                    at.renamedRegs.append(.init(
+                        id: instr.addr,
+                        block: depTable.first(where: { $0.addr == instr.addr })!.block,
+                        oldReg: oldReg.regToAddr,
+                        newReg: newReg.regToAddr
+                    ))
+                    
+                    regToAssignNext += assignJump
+                }
+            }
+        }
+        
+        return at
+    }
+    
+    // MARK: - loop
     func alloc_b(schedule: Schedule) -> AllocatedTable {
         var at = createInitialAllocTable(schedule: schedule, depTable: depTable)
         
-        
-        
         // Phase 1: Allocate fresh unique registers to each instruction producing a new value
         // Output: all destinations registers specified
-        at = allocFreshRegisters(at)
+        at = allocFreshRegisters_b(at)
         
         // Phase 2: Link each operand to the registers newly allocated in phase 1
         // If two dependencies, must be in bb0 and bb1, then use register of bb0. Incorrectness resolved in phase 3.
@@ -67,7 +128,7 @@ struct RegisterAllocator {
         return .init(table: table, renamedRegs: [])
     }
     
-    private func allocFreshRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
+    private func allocFreshRegisters_b(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         var regCounter = 1
         allocTable.table.enumerated().forEach { (bIndex, b) in
@@ -96,6 +157,7 @@ struct RegisterAllocator {
                         at.table[bIndex].Branch.instr?.destReg = newReg
                     }
                     at.renamedRegs.append(.init(
+                        id: instr.addr,
                         block: depTable.first(where: { $0.addr == instr.addr })!.block,
                         oldReg: oldReg.regToAddr,
                         newReg: regCounter
@@ -146,7 +208,7 @@ struct RegisterAllocator {
         let newRegs = allocTable.renamedRegs
             .filter { oldReg.regToAddr == $0.oldReg }
             .map { ($0.block, $0.newReg.toReg) }
-//        assert(newRegs.count <= 2)
+        //        assert(newRegs.count <= 2)
         if newRegs.count == 2 {
             //            return newRegs.first(where: { $0.0 == 0 })!.1
             if block == 1 {
