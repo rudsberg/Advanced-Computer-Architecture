@@ -95,6 +95,23 @@ struct ScheduleRow: CustomStringConvertible {
         let stage: String = stage != nil ? "\t| \(stage!)" : ""
         return "\(addr) | ALU0=\(ALU0.toChar), ALU1=\(ALU1.toChar), Mult=\(Mult.toChar), Mem=\(Mem.toChar), Branch=\(Branch.toChar)" + stage
     }
+    
+    func unitBusy(unit: ExecutionUnit) -> Bool {
+        switch unit {
+        case .ALU(let i):
+            if i == 0 {
+                return ALU0 != nil
+            } else {
+                return ALU1 != nil
+            }
+        case .Mult:
+            return Mult != nil
+        case .Mem:
+            return Mem != nil
+        case .Branch:
+            return Branch != nil
+        }
+    }
 }
 
 protocol Instruction: CustomStringConvertible {

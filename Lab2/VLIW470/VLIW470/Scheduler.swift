@@ -67,7 +67,7 @@ struct Scheduler {
                     hasCreatedLoop = true
                 }
                 
-                if let newSchedule = scheduleEntryPip(entry, schedule: schedule, loopStages: loopStages) {
+                if let newSchedule = scheduleEntryPip(entry, schedule: schedule, loopStages: loopStages, II: II) {
                     schedule = newSchedule
                 } else {
                     failed = true
@@ -83,7 +83,7 @@ struct Scheduler {
     }
     
     /// Assumes entries have been created before s
-    private func scheduleEntryPip(_ entry: DependencyTableEntry, schedule: Schedule, loopStages: Int) -> Schedule? {
+    private func scheduleEntryPip(_ entry: DependencyTableEntry, schedule: Schedule, loopStages: Int, II: Int) -> Schedule? {
         // S[s][i][j] the slot in schedule S, stage s, bundle with address (in program memory) i, and corresponding to the execution unit j
         // Try schedule instruction starting from stage 0, trying until last stage,
         // checking if S is violated + the same checks as in loop
@@ -114,25 +114,23 @@ struct Scheduler {
             // Getting here means no constraints are followed and exec unit not busy
             // Check for resource contention until we go outside current stage
             // Contentions means same addrWithStage already occupies the exec unit
-            if loopStages == 3 {
-                if entry.addr == 7 {
-                    let a = 1
+            // Check all exec units within current stage
+            let (_, firstPossibleAddrToAdd) = addToSchedule(entry, atEarliest: earliestAddr!, in: schedule)
+            
+            // From firstPossibleAddrToAdd, check each bundle within current stage, if found one that is
+            // not violating contention, then schedule on this spot
+            for bundle in schedule.filter({ $0.stage == stage && $0.addr >= firstPossibleAddrToAdd }) {
+                // Check if it violates contention
+                let conflictingRows = schedule.filter({
+                    // Same row another stage & exec unit busy
+                    $0.addrWithStage == bundle.addrWithStage && $0.unitBusy(unit: entry.instr.execUnit)
+                })
+                
+                if conflictingRows.isEmpty {
+                    let (newSchedule, _) = addToSchedule(entry, atEarliest: bundle.addr, in: schedule)
+                    return newSchedule
                 }
             }
-            let (_, addrToAdd) = addToSchedule(entry, atEarliest: earliestAddr!, in: schedule)
-            let entryAddrWithStage = schedule.first(where: { $0.addr == addrToAdd })!.addrWithStage!
-            let rowsSameAddr = schedule.filter { $0.block == 1 && $0.addrWithStage == entryAddrWithStage }
-            
-            let occupied = rowsSameAddr.allSatisfy { row in
-                update(row, ifCanBeHandled: entry) == nil
-            }
-            if occupied {
-                continue
-            }
-            
-            // We can now schedule it, return new updated schedule
-            let (newSchedule, _) = addToSchedule(entry, atEarliest: earliestAddr!, in: schedule)
-            return newSchedule
         }
         
         return nil
@@ -246,6 +244,7 @@ struct Scheduler {
         return (schedule, i)
     }
     
+    /// Checks the exec unit and updates if not occupied
     private func update(_ row: ScheduleRow, ifCanBeHandled entry: DependencyTableEntry) -> ScheduleRow? {
         var row = row
         switch entry.instr.execUnit {
