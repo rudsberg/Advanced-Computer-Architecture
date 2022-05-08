@@ -82,6 +82,7 @@ enum ExecutionUnit: Equatable {
 typealias Address = Int
 struct ScheduleRow: CustomStringConvertible {
     let addr: Address
+    var addrWithStage: Address? = nil
     let block: Int
     var ALU0: Address? = nil
     var ALU1: Address? = nil

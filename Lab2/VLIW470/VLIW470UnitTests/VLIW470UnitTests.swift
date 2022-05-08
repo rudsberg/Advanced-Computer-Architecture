@@ -137,6 +137,15 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(schedule.filter { $0.block == 1 }.count, 3)
     }
     
+    func testSchedulerPip1() throws {
+        let program = try createProgram(fromFile: "handout.json")
+        let db = DependencyBuilder()
+        let depTable = db.createTable(fromProgram: program)
+        
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop_pip()
+    }
+    
     func testAlloc_b() throws {
         let program = try createProgram(fromFile: "handout.json")
         let db = DependencyBuilder()

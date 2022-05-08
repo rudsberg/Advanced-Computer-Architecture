@@ -15,16 +15,56 @@ struct Scheduler {
     func schedule_loop_pip() -> Schedule {
         var schedule = Schedule()
         
+        // Start from minimal II and schedule using that
+        let loopInstr = depTable.filter { $0.block == 1 }
+        var II = minimalII()
+        var loopStages = Int(
+            ceil(Double(loopInstr.count) / Double(II))
+        )
+        print("loop stages \(loopStages)")
+//        var loopToProcess = loopInstr
+//        var processedInstr = 0
+        
+        var hasCreatedLoop = false
+        depTable.forEach { entry in
+            // Scheduling stage 0 and 2 is identical to loop
+            if entry.block == 0 || entry.block == 2 {
+                schedule = addToSchedule(entry, in: schedule)
+            } else {
+                // Create the loop bundles and divide into stages
+                if !hasCreatedLoop {
+                    // Create the loop with the stages
+                    for s in 0...loopStages-1 {
+                        for i in 0...II-1 {
+                            schedule.append(.init(
+                                addr: schedule.filter { $0.block == 0 }.count + s*II + i,
+                                addrWithStage: schedule.filter { $0.block == 0 }.count + i,
+                                block: 1
+                            ))
+                        }
+                    }
+                    hasCreatedLoop = true
+                }
+                
+                // Try schedule instruction starting from stage 0, trying until last stage,
+                // checking if S is violated + the same checks as in loop
+                
+                // if fails...
+            }
+            
+
+        }
+        
         return schedule
     }
-    
+        
     // MARK: - loop scheduling
     /// Output: valid schedule table, i.e. what each execution unit should perform each stage for the 3 basic blocks. Addr | ALU0 | ALU1 | Mult | Mem | Branch
     /// Picks instruction in sequential order, checks the dependencies in table, and schedules the instruction in the earliest possible slot
     /// All instructions must obey: S(P) + λ(P) ≤ S(C) + II, if violation, recompute by increasing II
     func schedule_loop() -> Schedule {
         var schedule = Schedule()
-        schedule = createSchedule()
+        schedule = createLoopSchedule(depTable: depTable)
         
         // Ensures II is obeyed
         schedule = recomputeIfNeeded(schedule: schedule)
@@ -36,12 +76,18 @@ struct Scheduler {
         return schedule
     }
     
-    private func createSchedule() -> Schedule {
+    private func createLoopSchedule(depTable: DependencyTable) -> Schedule {
         var schedule = Schedule()
         depTable.forEach { entry in
-            let stage = earliestScheduledStage(for: entry, in: schedule)
-            schedule = addToSchedule(entry, atEarliest: stage, in: schedule)
+            schedule = addToSchedule(entry, in: schedule)
         }
+        return schedule
+    }
+    
+    private func addToSchedule(_ entry: DependencyTableEntry, in schedule: Schedule) -> Schedule {
+        var schedule = schedule
+        let stage = earliestScheduledStage(for: entry, in: schedule)
+        schedule = addToSchedule(entry, atEarliest: stage, in: schedule)
         return schedule
     }
     
@@ -140,7 +186,7 @@ struct Scheduler {
     /// Recomputes the schedule if needed, depending on the II
     private func recomputeIfNeeded(schedule: Schedule) -> Schedule {
         var schedule = schedule
-        let initialII = minimalII(depTable: depTable)
+        let initialII = minimalII()
         let validII = validII(for: schedule, initialII: initialII)
         if initialII < validII {
             // Move down the instruction the difference of initialII and validII
@@ -168,7 +214,7 @@ struct Scheduler {
         return schedule
     }
     
-    private func minimalII(depTable: DependencyTable) -> Int {
+    private func minimalII() -> Int {
         guard !depTable.filter({ $0.block == 1 }).isEmpty else {
             return 0
         }
