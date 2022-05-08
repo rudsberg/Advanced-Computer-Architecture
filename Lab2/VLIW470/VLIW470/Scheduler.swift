@@ -15,17 +15,37 @@ struct Scheduler {
     func schedule_loop_pip() -> Schedule {
         var schedule = Schedule()
         
+        // Try to schedule starting from smallest II
+        var II = minimalII()
+        while true {
+            if let newSchedule = createSchedulePip(II: II) {
+                print("✅ pip schedule success for II \(II)")
+                schedule = newSchedule
+                break
+            } else {
+                print("🔴 pip failed schedule for II \(II)")
+                II += 1
+            }
+        }
+        
+        print("\n======= Schedule pip =======")
+        schedule.forEach({ print($0) })
+        
+        return schedule
+    }
+    
+    private func createSchedulePip(II: Int) -> Schedule? {
+        var schedule = Schedule()
+        
         // Start from minimal II and schedule using that
         let loopInstr = depTable.filter { $0.block == 1 }
-        var II = minimalII()
-        var loopStages = Int(
+        let loopStages = Int(
             ceil(Double(loopInstr.count) / Double(II))
         )
-        print("loop stages \(loopStages)")
-//        var loopToProcess = loopInstr
-//        var processedInstr = 0
+        print("num loop stages \(loopStages)")
         
         var hasCreatedLoop = false
+        var failed = false
         depTable.forEach { entry in
             // Scheduling stage 0 and 2 is identical to loop
             if entry.block == 0 || entry.block == 2 {
@@ -34,11 +54,12 @@ struct Scheduler {
                 // Create the loop bundles and divide into stages
                 if !hasCreatedLoop {
                     // Create the loop with the stages
-                    for s in 0...loopStages-1 {
-                        for i in 0...II-1 {
+                    for stage in 0...loopStages-1 {
+                        for offsetInStage in 0...II-1 {
                             schedule.append(.init(
-                                addr: schedule.filter { $0.block == 0 }.count + s*II + i,
-                                addrWithStage: schedule.filter { $0.block == 0 }.count + i,
+                                addr: schedule.filter { $0.block == 0 }.count + stage*II + offsetInStage,
+                                addrWithStage: schedule.filter { $0.block == 0 }.count + offsetInStage,
+                                stage: stage,
                                 block: 1
                             ))
                         }
@@ -46,16 +67,86 @@ struct Scheduler {
                     hasCreatedLoop = true
                 }
                 
-                // Try schedule instruction starting from stage 0, trying until last stage,
-                // checking if S is violated + the same checks as in loop
-                
-                // if fails...
+                if let newSchedule = scheduleEntryPip(entry, schedule: schedule, loopStages: loopStages) {
+                    schedule = newSchedule
+                } else {
+                    failed = true
+                }
             }
-            
-
         }
         
-        return schedule
+        if failed {
+            return nil
+        } else {
+            return schedule
+        }
+    }
+    
+    /// Assumes entries have been created before s
+    private func scheduleEntryPip(_ entry: DependencyTableEntry, schedule: Schedule, loopStages: Int) -> Schedule? {
+        // S[s][i][j] the slot in schedule S, stage s, bundle with address (in program memory) i, and corresponding to the execution unit j
+        // Try schedule instruction starting from stage 0, trying until last stage,
+        // checking if S is violated + the same checks as in loop
+        for stage in 0...loopStages-1 {
+            // Check for same contraints as in loop
+            // Branch instr can always be scheduled
+            var earliestAddr: Int?
+            if entry.instr.execUnit != .Branch {
+                // Earliest stage must be less than or eqal of max addr of current stage
+                earliestAddr = earliestScheduledBundle(for: entry, in: schedule)
+                let maxAddrInStage = schedule.filter({ $0.block == 1 && $0.stage! == stage }).map({ $0.addr }).max()!
+                if earliestAddr! > maxAddrInStage {
+                    continue
+                }
+                
+                // Must be at least one exec unit left in current stage
+                if execUnitBusyInStage(stage: stage, earliestAddr: earliestAddr!, maxAddrInStage: maxAddrInStage, entry: entry, schedule: schedule) {
+                    continue
+                }
+            } else {
+                // Schedule loop in the first stage
+                let i = schedule.lastIndex(where: { $0.block == 1 && $0.stage == 0 })!
+                var s = schedule
+                s[i].Branch = entry.addr
+                return s
+            }
+            
+            // Getting here means no constraints are followed and exec unit not busy
+            // Check for resource contention until we go outside current stage
+            // Contentions means same addrWithStage already occupies the exec unit
+            if loopStages == 3 {
+                if entry.addr == 7 {
+                    let a = 1
+                }
+            }
+            let (_, addrToAdd) = addToSchedule(entry, atEarliest: earliestAddr!, in: schedule)
+            let entryAddrWithStage = schedule.first(where: { $0.addr == addrToAdd })!.addrWithStage!
+            let rowsSameAddr = schedule.filter { $0.block == 1 && $0.addrWithStage == entryAddrWithStage }
+            
+            let occupied = rowsSameAddr.allSatisfy { row in
+                update(row, ifCanBeHandled: entry) == nil
+            }
+            if occupied {
+                continue
+            }
+            
+            // We can now schedule it, return new updated schedule
+            let (newSchedule, _) = addToSchedule(entry, atEarliest: earliestAddr!, in: schedule)
+            return newSchedule
+        }
+        
+        return nil
+    }
+    
+    private func execUnitBusyInStage(stage: Int, earliestAddr: Int, maxAddrInStage: Int, entry: DependencyTableEntry, schedule: Schedule) -> Bool {
+        var currAddr = earliestAddr
+        while (currAddr <= maxAddrInStage) {
+            if nil != update(schedule[currAddr], ifCanBeHandled: entry) {
+                return false
+            }
+            currAddr += 1
+        }
+        return true
     }
         
     // MARK: - loop scheduling
@@ -86,13 +177,14 @@ struct Scheduler {
     
     private func addToSchedule(_ entry: DependencyTableEntry, in schedule: Schedule) -> Schedule {
         var schedule = schedule
-        let stage = earliestScheduledStage(for: entry, in: schedule)
-        schedule = addToSchedule(entry, atEarliest: stage, in: schedule)
+        let stage = earliestScheduledBundle(for: entry, in: schedule)
+        let (s, _) = addToSchedule(entry, atEarliest: stage, in: schedule)
+        schedule = s
         return schedule
     }
     
     /// Finds earliest possible bundle to schedule entry within it's block (bb0/1/2) by analyzing its dependencies. Does not check if execution units are busy or not.
-    private func earliestScheduledStage(for entry: DependencyTableEntry, in schedule: Schedule) -> Int {
+    private func earliestScheduledBundle(for entry: DependencyTableEntry, in schedule: Schedule) -> Int {
         if entry.instr.execUnit == .Branch {
             return lastAddrInBlock(block: 1, in: schedule)
         }
@@ -130,7 +222,8 @@ struct Scheduler {
 
     /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the correct unit. Moves down if occupied until not.
     /// Assumes index is a valid spot, obeying dependencies.
-    private func addToSchedule(_ entry: DependencyTableEntry, atEarliest index: Int, in schedule: Schedule) -> Schedule {
+    /// Return new schedule and addr of where it was added
+    private func addToSchedule(_ entry: DependencyTableEntry, atEarliest index: Int, in schedule: Schedule) -> (Schedule, Int) {
         var schedule = schedule
         var i = index
         
@@ -150,7 +243,7 @@ struct Scheduler {
             }
         }
 
-        return schedule
+        return (schedule, i)
     }
     
     private func update(_ row: ScheduleRow, ifCanBeHandled entry: DependencyTableEntry) -> ScheduleRow? {

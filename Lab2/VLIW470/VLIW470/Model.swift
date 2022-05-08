@@ -83,6 +83,7 @@ typealias Address = Int
 struct ScheduleRow: CustomStringConvertible {
     let addr: Address
     var addrWithStage: Address? = nil
+    var stage: Address? = nil
     let block: Int
     var ALU0: Address? = nil
     var ALU1: Address? = nil
@@ -91,7 +92,8 @@ struct ScheduleRow: CustomStringConvertible {
     var Branch: Address? = nil
     
     var description: String {
-        "\(addr) | ALU0=\(ALU0.toChar), ALU1=\(ALU1.toChar), Mult=\(Mult.toChar), Mem=\(Mem.toChar), Branch=\(Branch.toChar)"
+        let stage: String = stage != nil ? "\t| \(stage!)" : ""
+        return "\(addr) | ALU0=\(ALU0.toChar), ALU1=\(ALU1.toChar), Mult=\(Mult.toChar), Mem=\(Mem.toChar), Branch=\(Branch.toChar)" + stage
     }
 }
 
