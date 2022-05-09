@@ -178,15 +178,15 @@ class VLIW470UnitTests: XCTestCase {
         
         XCTAssertEqual(t[3].Mult.instr?.addr.toChar, "F")
         XCTAssertEqual(t[3].Mult.instr?.destReg?.regToAddr, 38)
-//        XCTAssertEqual(t[3].Mult.instr?.readRegs?[0].regToAddr, 35+0+0) For local loop dependencies
+        XCTAssertEqual(t[3].Mult.instr?.readRegs?[0].regToAddr, 35+0+0)
         // TODO: local loop dependencies fucks up the assigned reg for loop invariant
         XCTAssertEqual(t[3].Mult.instr?.readRegs?[1].regToAddr, 1)
         
         XCTAssertEqual(t[4].Mult.instr?.addr.toChar, "G")
         XCTAssertEqual(t[4].Mult.instr?.destReg?.regToAddr, 41)
-//        XCTAssertEqual(t[4].Mult.instr?.readRegs?[1].regToAddr, 35+0+0) For local loop dependencies
+        XCTAssertEqual(t[4].Mult.instr?.readRegs?[1].regToAddr, 35+0+0)
         
-//        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToAddr, 38+0+1) For local loop dependenciesa
+//        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToAddr, 38+0+1)  // TODO: after store reg has been assigned
     }
     
     func testVLIWSimple() throws {

@@ -166,14 +166,17 @@ struct RegisterAllocator {
                         // x_D = x_S + (St(D) − St(S))
                         let localDep = deps.localDep.map { Int($0)! }
                         if !localDep.isEmpty {
+                            if instr.addr.toChar == "H" {
+                                
+                            }
                             let (bundle_addr, oldReg) = producingOldRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
                             let x_s = at.renamedRegs.first(where: { $0.oldReg == oldReg.regToAddr })!.newReg
                             let St_S = stage(bundle: bundle_addr)
                             let St_d = stage(bundle: bundle(addr: instr.addr, block: 1))
                             assert(St_d - St_S >= 0)
                             let x_D = x_s + (St_d - St_S)
-                            let oldReadReg = depTable.first(where: { $0.instr.destReg != nil && $0.instr.isProducingInstruction && $0.instr.destReg!.regToAddr == localDep[0] })!.instr.destReg!
-                            at = assignReadReg(x_D, oldReadReg: oldReadReg.regToAddr, in: at, toEntry: entry, atIndex: bIndex)
+                            let oldReadReg = at.renamedRegs.first(where: { $0.oldReg == depTable.first(where: { d in d.addr == localDep[0] })!.destReg!.regToAddr })!.oldReg
+                            at = assignReadReg(x_D, oldReadReg: oldReadReg, in: at, toEntry: entry, atIndex: bIndex)
                         }
                     }
                 }
