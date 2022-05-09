@@ -19,10 +19,11 @@ struct RegisterAllocator {
         at = allocFreshRegisters_r(at)
         
         // Phase 2: alloc nonrotating registers for each loop invariant
-        at = allocNonRotatingRegisters(at)
+        let (nextFreshReg, newTable) = allocNonRotatingRegisters(at)
+        at = newTable
         
         // Phase 3: link operands in loop body to its producers
-        at = linkOperands_r(at)
+        at = linkOperands_r(at, nextFreshReg: nextFreshReg)
         
         print("\n======= alloc_r allocation =======")
         at.table.enumerated().forEach{ (addr, x) in
@@ -80,7 +81,7 @@ struct RegisterAllocator {
     }
     
     /// Allocate fresh registers of those dest registers that have one or more invariant dependencies on itself
-    private func allocNonRotatingRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
+    private func allocNonRotatingRegisters(_ allocTable: AllocatedTable) -> (Int, AllocatedTable) {
         var at = allocTable
         var nextReg = 1
         let regsToRename = producingOldRegFromDep(deps: { $0.loopInvariantDep }, inBlock: 0).map { $0.1 }
@@ -121,7 +122,7 @@ struct RegisterAllocator {
                 }
             }
         }
-        return at
+        return (nextReg, at)
     }
     
     /// Given list of dependencies (as addr) return the (bundle, old reg) that is producing that value
@@ -147,12 +148,13 @@ struct RegisterAllocator {
         })!.addr
     }
     
-    private func linkOperands_r(_ allocTable: AllocatedTable) -> AllocatedTable {
+    private func linkOperands_r(_ allocTable: AllocatedTable, nextFreshReg: Int) -> AllocatedTable {
         var at = allocTable
-        
-        // TODO: • If an instruction has a local dependency within BB0 or BB2, register allocation works in the same way as register allocation without loop.pip (unless the destination register has already been allocated in Phase 1).
+        var regCounter = nextFreshReg
         
         allocTable.table.enumerated().forEach { (bIndex, b) in
+            
+            
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 if let instr = entry.instr {
                     let deps = depTable.first(where: { $0.addr == instr.addr })!
@@ -233,6 +235,8 @@ struct RegisterAllocator {
                             }
                         }
                     }
+                    
+                    // TODO: If an instruction in BB0 or BB2 reads a loop invariant it is simply assigned to the corresponding operand.
                 }
             }
         }
@@ -397,41 +401,53 @@ struct RegisterAllocator {
         var at = allocTable
         var regCounter = 1
         allocTable.table.enumerated().forEach { (bIndex, b) in
-            [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
-                if let instr = entry.instr, instr.isProducingInstruction {
-                    // Allocate new fresh register
-                    let newReg = "\(regCounter)"
-                    var oldReg: String! = ""
-                    switch entry.execUnit {
-                    case .ALU(let i):
-                        if i == 0 {
-                            oldReg = at.table[bIndex].ALU0.instr?.destReg
-                            at.table[bIndex].ALU0.instr?.destReg = newReg
-                        } else {
-                            oldReg = at.table[bIndex].ALU1.instr?.destReg
-                            at.table[bIndex].ALU1.instr?.destReg = newReg
-                        }
-                    case .Mult:
-                        oldReg = at.table[bIndex].Mult.instr?.destReg
-                        at.table[bIndex].Mult.instr?.destReg = newReg
-                    case .Mem:
-                        oldReg = at.table[bIndex].Mem.instr?.destReg
-                        at.table[bIndex].Mem.instr?.destReg = newReg
-                    case .Branch:
-                        oldReg = at.table[bIndex].Branch.instr?.destReg
-                        at.table[bIndex].Branch.instr?.destReg = newReg
-                    }
-                    at.renamedRegs.append(.init(
-                        id: instr.addr,
-                        block: depTable.first(where: { $0.addr == instr.addr })!.block,
-                        oldReg: oldReg.regToNum,
-                        newReg: regCounter
-                    ))
-                    regCounter += 1
-                }
-            }
+            let (newRow, newCounter, newRenamedRegs) = allocFreshRegisters(forRow: at.table[bIndex], startRegCounter: regCounter)
+            regCounter = newCounter
+            at.table[bIndex] = newRow
+            at.renamedRegs.append(contentsOf: newRenamedRegs)
         }
         return at
+    }
+    
+    /// Updates row and returns next regCounter that can be used, and newly renamed regs
+    private func allocFreshRegisters(forRow row: RegisterAllocRow, startRegCounter: Int) -> (RegisterAllocRow, Int, [RenamedReg]) {
+        var regCounter = startRegCounter
+        var b = row
+        var renamedRegs = [RenamedReg]()
+        [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
+            if let instr = entry.instr, instr.isProducingInstruction {
+                // Allocate new fresh register
+                let newReg = "\(regCounter)"
+                var oldReg: String! = ""
+                switch entry.execUnit {
+                case .ALU(let i):
+                    if i == 0 {
+                        oldReg = b.ALU0.instr?.destReg
+                        b.ALU0.instr?.destReg = newReg
+                    } else {
+                        oldReg = b.ALU1.instr?.destReg
+                        b.ALU1.instr?.destReg = newReg
+                    }
+                case .Mult:
+                    oldReg = b.Mult.instr?.destReg
+                    b.Mult.instr?.destReg = newReg
+                case .Mem:
+                    oldReg = b.Mem.instr?.destReg
+                    b.Mem.instr?.destReg = newReg
+                case .Branch:
+                    oldReg = b.Branch.instr?.destReg
+                    b.Branch.instr?.destReg = newReg
+                }
+                renamedRegs.append(.init(
+                    id: instr.addr,
+                    block: depTable.first(where: { $0.addr == instr.addr })!.block,
+                    oldReg: oldReg.regToNum,
+                    newReg: regCounter
+                ))
+                regCounter += 1
+            }
+        }
+        return (b, regCounter, renamedRegs)
     }
     
     private func linkRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
