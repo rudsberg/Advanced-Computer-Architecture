@@ -153,11 +153,13 @@ struct RegisterAllocator {
         var regCounter = nextFreshReg
         
         allocTable.table.enumerated().forEach { (bIndex, b) in
-            
+            // TODO: If an instruction has a local dependency within BB0 or BB2, register allocation works in the same way as register allocation without loop.pip (unless the destination register has already been allocated in Phase 1).
             
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 if let instr = entry.instr {
                     let deps = depTable.first(where: { $0.addr == instr.addr })!
+                    
+                    // Instructions in BB0/BB2 that
                     
                     if let readRegs = instr.readRegs, !readRegs.isEmpty, at.table[bIndex].block == 1 {
                         // For loop invariant dependencies, the register assigned in phase two is read and assigned to the corresponding operand
