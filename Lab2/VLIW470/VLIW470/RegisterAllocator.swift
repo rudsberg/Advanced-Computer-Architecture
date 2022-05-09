@@ -28,15 +28,15 @@ struct RegisterAllocator {
     private func allocFreshRegisters_r(_ allocTable: AllocatedTable, _ schedule: Schedule) -> AllocatedTable {
         var at = allocTable
         // id -> prev reg, id -> new reg
-        let assignJump = schedule.compactMap { $0.stage }.max()!
+        let assignJump = schedule.compactMap { $0.stage }.max()! + 1 + 1 // first +1 for num stages then +1 for equation
         let regs = Array(32...95)
-        var regToAssignNext = regs[0]
+        var indexRegToAssignNext = 0
         
         allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
-                if let instr = entry.instr, instr.isProducingInstruction {
+                if let instr = entry.instr, instr.isProducingInstruction, at.table[bIndex].block == 1 {
                     // Allocate new fresh register
-                    let newReg = "\(regToAssignNext)"
+                    let newReg = "\(regs[indexRegToAssignNext])"
                     var oldReg: String! = ""
                     switch entry.execUnit {
                     case .ALU(let i):
@@ -64,7 +64,7 @@ struct RegisterAllocator {
                         newReg: newReg.regToAddr
                     ))
                     
-                    regToAssignNext += assignJump
+                    indexRegToAssignNext += assignJump
                 }
             }
         }

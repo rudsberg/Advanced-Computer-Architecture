@@ -160,7 +160,7 @@ struct Scheduler {
         schedule = createLoopSchedule(depTable: depTable)
         
         // Ensures II is obeyed
-        // TODO: ...
+        // TODO: ask what to do here
 //        schedule = recomputeIfNeeded(schedule: schedule)
         
         // Print for debugging
