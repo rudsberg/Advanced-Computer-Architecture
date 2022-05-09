@@ -20,6 +20,9 @@ struct RegisterAllocator {
         // Phase 2: alloc nonrotating registers for each loop invariant
         at = allocNonRotatingRegisters(at)
         
+        // Phase 3: link operands in loop body to its producers
+        at = linkOperands_r(at)
+        
         print("\n======= alloc_r allocation =======")
         at.table.enumerated().forEach{ (addr, x) in
             print("\(addr) | ALU0=\(x.ALU0.instr), ALU1=\(x.ALU1.instr), Mult=\(x.Mult.instr), Mem=\(x.Mem.instr), Branch=\(x.Branch.instr)")
@@ -89,28 +92,105 @@ struct RegisterAllocator {
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 // Retrieve those in bb0 that are invariantly dependent on
                 if let instr = entry.instr, let destReg = instr.destReg, regsToRename.contains(destReg), at.table[bIndex].block == 0 {
-                    // !depTable.first(where: { $0.addr == instr.addr })!.interloopDep.isEmpty
                     // Allocate new fresh register
                     let newReg = "\(nextReg)"
+                    var oldReg: String! = ""
                     switch entry.execUnit {
                     case .ALU(let i):
                         if i == 0 {
+                            oldReg = at.table[bIndex].ALU0.instr?.destReg
                             at.table[bIndex].ALU0.instr?.destReg = newReg
                         } else {
+                            oldReg = at.table[bIndex].ALU1.instr?.destReg
                             at.table[bIndex].ALU1.instr?.destReg = newReg
                         }
                     case .Mult:
+                        oldReg = at.table[bIndex].Mult.instr?.destReg
                         at.table[bIndex].Mult.instr?.destReg = newReg
                     case .Mem:
+                        oldReg = at.table[bIndex].Mem.instr?.destReg
                         at.table[bIndex].Mem.instr?.destReg = newReg
                     case .Branch:
+                        oldReg = at.table[bIndex].Branch.instr?.destReg
                         at.table[bIndex].Branch.instr?.destReg = newReg
                     }
-                    
+                    at.nonRotatingRenamedRegs.append(.init(
+                        id: instr.addr,
+                        block: depTable.first(where: { $0.addr == instr.addr })!.block,
+                        oldReg: oldReg.regToAddr,
+                        newReg: newReg.regToAddr
+                    ))
                     nextReg += 1
                 }
             }
         }
+        return at
+    }
+    
+    private func linkOperands_r(_ allocTable: AllocatedTable) -> AllocatedTable {
+        var at = allocTable
+        allocTable.table.enumerated().forEach { (bIndex, b) in
+            [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
+                if let instr = entry.instr {
+                    let deps = depTable.first(where: { $0.addr == instr.addr })!
+                    
+                    if let readRegs = instr.readRegs, !readRegs.isEmpty, at.table[bIndex].block == 1 {
+                        // For loop invariant dependencies, the register assigned in phase two is read and assigned to the corresponding operand
+                        let loopInvDep = deps.loopInvariantDep.map { Int($0)! }
+                        if !loopInvDep.isEmpty {
+                            let renamed = at.nonRotatingRenamedRegs.first(where: { loopInvDep.contains($0.id) })!
+                            at = assignReadReg(renamed.newReg, oldReadReg: renamed.oldReg, in: at, toEntry: entry, atIndex: bIndex)
+                        }
+                        
+                        
+                    }
+                }
+            }
+        }
+        return at
+    }
+    
+    private func assignReadReg(_ newReadReg: Int, oldReadReg: Int, in allocTable: AllocatedTable, toEntry entry: RegisterAllocEntry, atIndex index: Int) -> AllocatedTable {
+        var at = allocTable
+        
+        // Must only update the oldReadReg
+        func update(instr: Instruction?) -> [String]? {
+            if let instr = instr, let readRegs = instr.readRegs?.compactMap({ $0.regToAddr }), !readRegs.isEmpty {
+                if readRegs.count == 1 {
+                    return [newReadReg].map { "\($0)" }
+                } else {
+                    // pos 1 or 2 that will be updated
+                    if readRegs[0] == oldReadReg {
+                        return [newReadReg, readRegs[1]].map { "\($0)" }
+                    } else {
+                        return [readRegs[0], newReadReg].map { "\($0)" }
+                    }
+                }
+            } else {
+                return nil
+            }
+        }
+        
+        switch entry.execUnit {
+        case .ALU(let i):
+            if i == 0 {
+                let instr = at.table[index].ALU0.instr
+                at.table[index].ALU0.instr?.readRegs = update(instr: instr)
+            } else {
+                let instr = at.table[index].ALU1.instr
+                at.table[index].ALU1.instr?.readRegs = update(instr: instr)
+            }
+        case .Mult:
+            let instr = at.table[index].Mult.instr
+            at.table[index].Mult.instr?.readRegs = update(instr: instr)
+        case .Mem:
+            let instr = at.table[index].Mem.instr
+            at.table[index].Mem.instr?.readRegs = update(instr: instr)
+        case .Branch:
+            let instr = at.table[index].Branch.instr
+            at.table[index].Branch.instr?.readRegs = update(instr: instr)
+        }
+        
         return at
     }
     
@@ -250,9 +330,8 @@ struct RegisterAllocator {
         let newRegs = allocTable.renamedRegs
             .filter { oldReg.regToAddr == $0.oldReg }
             .map { ($0.block, $0.newReg.toReg) }
-        //        assert(newRegs.count <= 2)
+
         if newRegs.count == 2 {
-            //            return newRegs.first(where: { $0.0 == 0 })!.1
             if block == 1 {
                 // TODO: what's the intention to do here???
                 // return the one from bb0

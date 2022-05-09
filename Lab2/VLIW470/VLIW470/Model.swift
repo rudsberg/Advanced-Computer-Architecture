@@ -13,8 +13,11 @@ typealias Schedule = [ScheduleRow]
 
 struct AllocatedTable {
     var table: [RegisterAllocRow]
-    /// Collects the registers we have renamed. (Old, New)
+    /// Collects the registers we have renamed. (Old, New).
+    /// For alloc_b this is all regs, for alloc_r is the instructions producing new values in bb1
     var renamedRegs: [RenamedReg]
+    /// For alloc_b: non-rotating registers that have been renamed
+    var nonRotatingRenamedRegs: [RenamedReg] = []
 }
 
 struct RenamedReg {

@@ -178,6 +178,7 @@ class VLIW470UnitTests: XCTestCase {
         
         XCTAssertEqual(t[3].Mult.instr?.addr.toChar, "F")
         XCTAssertEqual(t[3].Mult.instr?.destReg?.regToAddr, 38)
+        XCTAssertEqual(t[3].Mult.instr?.readRegs?[1].regToAddr, 1)
         
         XCTAssertEqual(t[4].Mult.instr?.addr.toChar, "G")
         XCTAssertEqual(t[4].Mult.instr?.destReg?.regToAddr, 41)
