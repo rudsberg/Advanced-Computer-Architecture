@@ -166,6 +166,21 @@ class VLIW470UnitTests: XCTestCase {
         
         let res = RegisterAllocator(depTable: depTable).alloc_r(schedule: schedule)
         let t = res.table
+        
+        XCTAssertEqual(t[1].ALU1.instr?.addr.toChar, "D")
+        XCTAssertEqual(t[1].ALU1.instr?.destReg?.regToAddr, 1)
+        
+        XCTAssertEqual(t[2].ALU0.instr?.addr.toChar, "I")
+        XCTAssertEqual(t[2].ALU0.instr?.destReg?.regToAddr, 32)
+        
+        XCTAssertEqual(t[2].Mem.instr?.addr.toChar, "E")
+        XCTAssertEqual(t[2].Mem.instr?.destReg?.regToAddr, 35)
+        
+        XCTAssertEqual(t[3].Mult.instr?.addr.toChar, "F")
+        XCTAssertEqual(t[3].Mult.instr?.destReg?.regToAddr, 38)
+        
+        XCTAssertEqual(t[4].Mult.instr?.addr.toChar, "G")
+        XCTAssertEqual(t[4].Mult.instr?.destReg?.regToAddr, 41)
     }
     
     func testVLIWSimple() throws {

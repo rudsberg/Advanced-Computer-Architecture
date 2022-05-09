@@ -14,13 +14,19 @@ let alphabet = "abcdefghijklmnopqrstuvwxyz"
 extension Optional where Wrapped == Int {
     var toChar: String {
         if let num = self {
-            if num >= 26 {
-                return "\(num)"
-            } else {
-                return String(alphabet[num])
-            }
+            return num.toChar
         } else {
             return "-"
+        }
+    }
+}
+
+extension Int {
+    var toChar: String {
+        if self >= 26 {
+            return "\(self)"
+        } else {
+            return String(alphabet[self])
         }
     }
 }

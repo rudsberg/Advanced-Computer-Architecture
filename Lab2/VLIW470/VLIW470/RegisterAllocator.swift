@@ -17,6 +17,9 @@ struct RegisterAllocator {
         // Phase 1: allocr allocates fresh unique rotating registers to each instruction producing a new value in BB1
         at = allocFreshRegisters_r(at, schedule)
         
+        // Phase 2: alloc nonrotating registers for each loop invariant
+        at = allocNonRotatingRegisters(at)
+        
         print("\n======= alloc_r allocation =======")
         at.table.enumerated().forEach{ (addr, x) in
             print("\(addr) | ALU0=\(x.ALU0.instr), ALU1=\(x.ALU1.instr), Mult=\(x.Mult.instr), Mem=\(x.Mem.instr), Branch=\(x.Branch.instr)")
@@ -69,6 +72,45 @@ struct RegisterAllocator {
             }
         }
         
+        return at
+    }
+    
+    /// Allocate fresh registers of those dest registers that have one or more invariant dependencies on itself
+    private func allocNonRotatingRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
+        var at = allocTable
+        var nextReg = 1
+        // Checks the bb0 producing instructions, for each, check if any instructions are loop invariant on it
+        let regsToRename = depTable.filter { instr in
+            guard instr.block == 0, instr.instr.isProducingInstruction else { return false }
+            return depTable.contains(where: { $0.loopInvariantDep.map({ Int($0)! }).contains(instr.instr.addr) })
+        }.map { $0.destReg! }
+        
+        allocTable.table.enumerated().forEach { (bIndex, b) in
+            [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
+                // Retrieve those in bb0 that are invariantly dependent on
+                if let instr = entry.instr, let destReg = instr.destReg, regsToRename.contains(destReg), at.table[bIndex].block == 0 {
+                    // !depTable.first(where: { $0.addr == instr.addr })!.interloopDep.isEmpty
+                    // Allocate new fresh register
+                    let newReg = "\(nextReg)"
+                    switch entry.execUnit {
+                    case .ALU(let i):
+                        if i == 0 {
+                            at.table[bIndex].ALU0.instr?.destReg = newReg
+                        } else {
+                            at.table[bIndex].ALU1.instr?.destReg = newReg
+                        }
+                    case .Mult:
+                        at.table[bIndex].Mult.instr?.destReg = newReg
+                    case .Mem:
+                        at.table[bIndex].Mem.instr?.destReg = newReg
+                    case .Branch:
+                        at.table[bIndex].Branch.instr?.destReg = newReg
+                    }
+                    
+                    nextReg += 1
+                }
+            }
+        }
         return at
     }
     
