@@ -167,10 +167,10 @@ struct ArithmeticInstruction: Instruction {
         set {
             if let readRegs = newValue {
                 if mnemonic == .addi {
-                    opA = readRegs[0].regToAddr
+                    opA = readRegs[0].regToNum
                 } else {
-                    opA = readRegs[0].regToAddr
-                    opB = readRegs[1].regToAddr
+                    opA = readRegs[0].regToNum
+                    opB = readRegs[1].regToNum
                 }
             }
         }
@@ -216,12 +216,12 @@ struct MemoryInstruction: Instruction {
                 if mnemonic == .st {
                     // TODO: what about immediate????
                     assert(readRegs.count == 2, "[dest, storeaddr]")
-                    destOrSource = readRegs[0].regToAddr
-                    loadStoreAddr = readRegs[1].regToAddr
+                    destOrSource = readRegs[0].regToNum
+                    loadStoreAddr = readRegs[1].regToNum
                 } else {
                     // TODO: what about immediate????
                     assert(readRegs.count == 1, "[storeaddr]")
-                    loadStoreAddr = readRegs[0].regToAddr
+                    loadStoreAddr = readRegs[0].regToNum
                 }
             }
         }
@@ -303,14 +303,14 @@ struct MoveInstruction: Instruction {
     /// -1 for LC, -2 for EC
     var destReg: String? {
         get { reg == -1 ? "LC" : (reg == -2 ? "EC" : reg.toReg) }
-        set { reg = reg == -1 || reg == -2 ? reg : (newValue != nil ? Int(newValue!)! : self.reg) }
+        set { reg = reg == -1 || reg == -2 ? reg : (newValue != nil ? Int(newValue!) ?? newValue!.regToNum : self.reg) }
     }
     var readRegs: [String]? {
         get { type == .setDestRegWithSourceReg ? [val.toReg] : nil }
         set {
             if type == .setDestRegWithSourceReg {
                 assert(newValue?.count == 1)
-                val = newValue![0].regToAddr
+                val = newValue![0].regToNum
             }
         }
     }
@@ -335,7 +335,7 @@ extension Int {
 }
 
 extension String {
-    var regToAddr: Int {
+    var regToNum: Int {
         if self.first == "x" {
             return Int(dropFirst())!
         } else {
@@ -346,7 +346,7 @@ extension String {
 
 extension Sequence where Element == String {
     var regsToAddresses: [Int] {
-        self.map { $0.regToAddr }
+        self.map { $0.regToNum }
     }
 }
 

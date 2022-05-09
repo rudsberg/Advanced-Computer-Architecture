@@ -67,8 +67,8 @@ struct RegisterAllocator {
                     at.renamedRegs.append(.init(
                         id: instr.addr,
                         block: depTable.first(where: { $0.addr == instr.addr })!.block,
-                        oldReg: oldReg.regToAddr,
-                        newReg: newReg.regToAddr
+                        oldReg: oldReg.regToNum,
+                        newReg: newReg.regToNum
                     ))
                     
                     indexRegToAssignNext += assignJump
@@ -114,8 +114,8 @@ struct RegisterAllocator {
                     at.nonRotatingRenamedRegs.append(.init(
                         id: instr.addr,
                         block: depTable.first(where: { $0.addr == instr.addr })!.block,
-                        oldReg: oldReg.regToAddr,
-                        newReg: newReg.regToAddr
+                        oldReg: oldReg.regToNum,
+                        newReg: newReg.regToNum
                     ))
                     nextReg += 1
                 }
@@ -167,33 +167,42 @@ struct RegisterAllocator {
                         let localDep = deps.localDep.map { Int($0)! }
                         if !localDep.isEmpty {
                             let (bundle_addr, oldReg) = producingOldRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
-                            let x_s = at.renamedRegs.first(where: { $0.oldReg == oldReg.regToAddr })!.newReg
+                            let x_s = at.renamedRegs.first(where: { $0.oldReg == oldReg.regToNum })!.newReg
                             let St_S = stage(bundle: bundle_addr)
                             let St_d = stage(bundle: bundle(addr: instr.addr, block: 1))
                             assert(St_d - St_S >= 0)
                             let x_D = x_s + (St_d - St_S)
-                            let oldReadReg = at.renamedRegs.first(where: { $0.oldReg == depTable.first(where: { d in d.addr == localDep[0] })!.destReg!.regToAddr })!.oldReg
+                            let oldReadReg = at.renamedRegs.first(where: { $0.oldReg == depTable.first(where: { d in d.addr == localDep[0] })!.destReg!.regToNum })!.oldReg
                             at = assignReadReg(x_D, oldReadReg: oldReadReg, in: at, toEntry: entry, atIndex: bIndex)
                         }
                         
                         // Interloop dependencies
                         // x_D = x_S + (St(D) − St(S)) + 1
                         let interloopDeps = deps.interloopDep.map { Int($0)! }
-                        if instr.addr.toChar == "H" {
-                            
-                        }
                         if !interloopDeps.isEmpty {
                             let interloopDepAddr = interloopDeps.max()!
                             // Find the old destReg of instruction at this address
                             let oldDestReg = depTable.first(where: { $0.addr == interloopDepAddr })!.destReg!
                             // Find what it now points to
-                            let x_s = at.renamedRegs.first(where: { $0.oldReg == oldDestReg.regToAddr })!.newReg
+                            let x_s = at.renamedRegs.first(where: { $0.oldReg == oldDestReg.regToNum })!.newReg
                             let St_S = stage(bundle: bundle(addr: interloopDepAddr, block: 1))
                             let St_d = stage(bundle: bundle(addr: instr.addr, block: 1))
                             assert(St_d - St_S >= 0)
                             let x_D = x_s + (St_d - St_S) + 1
-                            let oldReadReg = at.renamedRegs.first(where: { $0.oldReg == depTable.first(where: { d in d.addr == interloopDepAddr })!.destReg!.regToAddr })!.oldReg
+                            let oldReadReg = at.renamedRegs.first(where: { $0.oldReg == depTable.first(where: { d in d.addr == interloopDepAddr })!.destReg!.regToNum })!.oldReg
                             at = assignReadReg(x_D, oldReadReg: oldReadReg, in: at, toEntry: entry, atIndex: bIndex)
+                        }
+                    }
+                    
+                    // If an instruction in BB0 is writing to a register r such that r is in the interloop dependency of any instruction of the loop body, the iteration offset is set to 1, the stage offset is set to 0, and the destination register is the same as the producer within the loop.
+                    if let destReg = instr.destReg, at.table[bIndex].block == 0 {
+                        if depTable.first(where: { $0.interloopDep.map{ $0.regToNum }.contains(instr.addr) }) != nil {
+                            // Means there exist an instruction depedent on this destReg
+                            // Find this instruction newDestReg and add 1 for offset
+                            let newDestReg = at.renamedRegs.first(where: { $0.oldReg == destReg.regToNum })!.newReg + 1
+                            
+                            // Update instruction
+                            at = assignDestReg(newDestReg, in: at, toEntry: entry, atIndex: bIndex)
                         }
                     }
                 }
@@ -206,12 +215,40 @@ struct RegisterAllocator {
         schedule.first(where: { $0.addr == bundle })!.stage!
     }
     
+    private func block(instr: Instruction) -> Int {
+        let a = instr.addr
+        return schedule.first(where: { r in
+            r.ALU0 == a || r.ALU1 == a || r.Mult == a || r.Mem == a || r.Branch == a
+        })!.block
+    }
+    
+    private func assignDestReg(_ destReg: Int, in allocTable: AllocatedTable, toEntry entry: RegisterAllocEntry, atIndex index: Int) -> AllocatedTable {
+        var at = allocTable
+        let newDestReg = "\(destReg)"
+        switch entry.execUnit {
+        case .ALU(let i):
+            if i == 0 {
+                at.table[index].ALU0.instr?.destReg = newDestReg
+            } else {
+                at.table[index].ALU1.instr?.destReg = newDestReg
+            }
+        case .Mult:
+            at.table[index].Mult.instr?.destReg = newDestReg
+        case .Mem:
+            at.table[index].Mem.instr?.destReg = newDestReg
+        case .Branch:
+            at.table[index].Branch.instr?.destReg = newDestReg
+        }
+        
+        return at
+    }
+    
     private func assignReadReg(_ newReadReg: Int, oldReadReg: Int, in allocTable: AllocatedTable, toEntry entry: RegisterAllocEntry, atIndex index: Int) -> AllocatedTable {
         var at = allocTable
         
         // Must only update the oldReadReg
         func update(instr: Instruction?) -> [String]? {
-            if let instr = instr, let readRegs = instr.readRegs?.compactMap({ $0.regToAddr }), !readRegs.isEmpty {
+            if let instr = instr, let readRegs = instr.readRegs?.compactMap({ $0.regToNum }), !readRegs.isEmpty {
                 if readRegs.count == 1 {
                     return [newReadReg].map { "\($0)" }
                 } else {
@@ -337,7 +374,7 @@ struct RegisterAllocator {
                     at.renamedRegs.append(.init(
                         id: instr.addr,
                         block: depTable.first(where: { $0.addr == instr.addr })!.block,
-                        oldReg: oldReg.regToAddr,
+                        oldReg: oldReg.regToNum,
                         newReg: regCounter
                     ))
                     regCounter += 1
@@ -384,7 +421,7 @@ struct RegisterAllocator {
     private func oldRegToNewFreshReg(oldReg: String, block: Int, allocTable: AllocatedTable) -> String {
         // If two match then return the one in bb0
         let newRegs = allocTable.renamedRegs
-            .filter { oldReg.regToAddr == $0.oldReg }
+            .filter { oldReg.regToNum == $0.oldReg }
             .map { ($0.block, $0.newReg.toReg) }
         
         if newRegs.count == 2 {
@@ -414,14 +451,14 @@ struct RegisterAllocator {
         // Find registers that are overwritten in loop, ie interloop dependencies where one must be from bb0
         let bb0 = depTable
             .filter { $0.block == 0 && $0.instr.isProducingInstruction }
-            .compactMap { $0.destReg?.regToAddr }
+            .compactMap { $0.destReg?.regToNum }
         var oldOverwrittenRegs = depTable
         // If in block 1 and has two interloop dep, then it is of interest
             .filter { $0.block == 1 && $0.interloopDep.count == 2 }
         // Map it to a reg
             .map { loopInstr -> String in
                 // The lower of the two deps is the one in bb0
-                let addr = max(loopInstr.interloopDep[0].regToAddr, loopInstr.interloopDep[1].regToAddr)
+                let addr = max(loopInstr.interloopDep[0].regToNum, loopInstr.interloopDep[1].regToNum)
                 return depTable[addr].destReg!
             }
         // Remove duplicates
@@ -429,7 +466,7 @@ struct RegisterAllocator {
         
         // Map to what regs now are assigned to
         var newOverwrittenRegs = oldOverwrittenRegs.map { r in
-            at.renamedRegs.first(where: { $0.oldReg == r.regToAddr })!.newReg.toReg
+            at.renamedRegs.first(where: { $0.oldReg == r.regToNum })!.newReg.toReg
         }
         newOverwrittenRegs = newOverwrittenRegs.uniqued()
         
@@ -470,7 +507,7 @@ struct RegisterAllocator {
             }
             
             // Now dependency dealt with, still risk ALU is in use, check then assign
-            let movInstr = MoveInstruction(addr: currAddr, type: .setDestRegWithSourceReg, reg: mov.0.regToAddr, val: mov.1.regToAddr)
+            let movInstr = MoveInstruction(addr: currAddr, type: .setDestRegWithSourceReg, reg: mov.0.regToNum, val: mov.1.regToNum)
             if at.table[currAddr].ALU0.instr == nil {
                 at.table[currAddr].ALU0.instr = movInstr
             } else if at.table[currAddr].ALU1.instr == nil {

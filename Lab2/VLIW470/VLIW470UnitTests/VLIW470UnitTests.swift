@@ -167,31 +167,36 @@ class VLIW470UnitTests: XCTestCase {
         let res = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_r()
         let t = res.table
         
+        XCTAssertEqual(t[0].ALU1.instr?.addr.toChar, "B")
+        XCTAssertEqual(t[0].ALU1.instr?.destReg?.regToNum, 32+1+0)
+        
+        XCTAssertEqual(t[1].ALU0.instr?.addr.toChar, "C")
+        XCTAssertEqual(t[1].ALU0.instr?.destReg?.regToNum, 41+1+0)
         XCTAssertEqual(t[1].ALU1.instr?.addr.toChar, "D")
-        XCTAssertEqual(t[1].ALU1.instr?.destReg?.regToAddr, 1)
+        XCTAssertEqual(t[1].ALU1.instr?.destReg?.regToNum, 1)
         
         XCTAssertEqual(t[2].ALU0.instr?.addr.toChar, "I")
-        XCTAssertEqual(t[2].ALU0.instr?.destReg?.regToAddr, 32)
-        XCTAssertEqual(t[2].ALU0.instr?.readRegs?[0].regToAddr, 32+1)
+        XCTAssertEqual(t[2].ALU0.instr?.destReg?.regToNum, 32)
+        XCTAssertEqual(t[2].ALU0.instr?.readRegs?[0].regToNum, 32+1)
         XCTAssertEqual(t[2].Mem.instr?.addr.toChar, "E")
-        XCTAssertEqual(t[2].Mem.instr?.destReg?.regToAddr, 35)
-        XCTAssertEqual(t[2].Mem.instr?.readRegs?[0].regToAddr, 32+1)
+        XCTAssertEqual(t[2].Mem.instr?.destReg?.regToNum, 35)
+        XCTAssertEqual(t[2].Mem.instr?.readRegs?[0].regToNum, 32+1)
         
         XCTAssertEqual(t[3].Mult.instr?.addr.toChar, "F")
-        XCTAssertEqual(t[3].Mult.instr?.destReg?.regToAddr, 38)
-        XCTAssertEqual(t[3].Mult.instr?.readRegs?[0].regToAddr, 35+0+0)
-        XCTAssertEqual(t[3].Mult.instr?.readRegs?[1].regToAddr, 1)
+        XCTAssertEqual(t[3].Mult.instr?.destReg?.regToNum, 38)
+        XCTAssertEqual(t[3].Mult.instr?.readRegs?[0].regToNum, 35+0+0)
+        XCTAssertEqual(t[3].Mult.instr?.readRegs?[1].regToNum, 1)
         
         XCTAssertEqual(t[4].Mult.instr?.addr.toChar, "G")
-        XCTAssertEqual(t[4].Mult.instr?.destReg?.regToAddr, 41)
-        XCTAssertEqual(t[4].Mult.instr?.readRegs?[0].regToAddr, 41+1+0)
-        XCTAssertEqual(t[4].Mult.instr?.readRegs?[1].regToAddr, 35+0+0)
+        XCTAssertEqual(t[4].Mult.instr?.destReg?.regToNum, 41)
+        XCTAssertEqual(t[4].Mult.instr?.readRegs?[0].regToNum, 41+1+0)
+        XCTAssertEqual(t[4].Mult.instr?.readRegs?[1].regToNum, 35+0+0)
         
         XCTAssertEqual(t[6].Mem.instr?.addr.toChar, "H")
-//        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToAddr, 38+0+1)
-        XCTAssertEqual(t[6].Mem.instr?.readRegs?[1].regToAddr, 32+1+1)
+//        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToNum, 38+0+1)
+        XCTAssertEqual(t[6].Mem.instr?.readRegs?[1].regToNum, 32+1+1)
         
-//        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToAddr, 38+0+1)  // TODO: after store reg has been assigned
+//        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToNum, 38+0+1)  // TODO: after store reg has been assigned
     }
     
     func testVLIWSimple() throws {
