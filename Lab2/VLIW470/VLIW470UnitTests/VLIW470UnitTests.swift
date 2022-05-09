@@ -195,8 +195,13 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(t[6].Mem.instr?.addr.toChar, "H")
 //        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToNum, 38+0+1)
         XCTAssertEqual(t[6].Mem.instr?.readRegs?[1].regToNum, 32+1+1)
-        
 //        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToNum, 38+0+1)  // TODO: after store reg has been assigned
+        
+        XCTAssertEqual(t[8].Mem.instr?.addr.toChar, "K")
+        XCTAssertEqual(t[8].Mem.instr?.readRegs?[0].regToNum, 41+0+1)
+        XCTAssertEqual(t[8].Mem.instr?.readRegs?[1].regToNum, 32+0+1)
+
+
     }
     
     func testVLIWSimple() throws {

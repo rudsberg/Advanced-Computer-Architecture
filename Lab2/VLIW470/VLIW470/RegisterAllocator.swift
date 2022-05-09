@@ -149,6 +149,9 @@ struct RegisterAllocator {
     
     private func linkOperands_r(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
+        
+        // TODO: • If an instruction has a local dependency within BB0 or BB2, register allocation works in the same way as register allocation without loop.pip (unless the destination register has already been allocated in Phase 1).
+        
         allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 if let instr = entry.instr {
@@ -205,6 +208,31 @@ struct RegisterAllocator {
                             at = assignDestReg(newDestReg, in: at, toEntry: entry, atIndex: bIndex)
                         }
                     }
+                    
+                    // If an instruction in BB2 has a post dependency, it consumes a register produced within the loop body. This register is produced in the last iteration of the loop. As a result, the iteration offset is always zero, and the stage offset is simply the stage distance between the producer and consumer, where the consumer is assumed to be on the last stage of the loop.
+                    if at.table[bIndex].block == 2, let readRegs = instr.readRegs, !readRegs.isEmpty {
+                        if let postLoopDeps = depTable.first(where: { $0.addr == instr.addr && $0.block == 2 }).map({ $0.postLoopDep }), !postLoopDeps.isEmpty {
+                            // Register is producingReg in bb1 + stage offset
+                            var oldReadReg: Int!
+                            let newReadRegs = postLoopDeps.map { depAddr -> Int in
+                                // Resolve register it's depending on
+                                let dependentReg = depTable.first(where: { $0.addr == depAddr.regToNum })!.destReg!
+                                let renamedReg = at.renamedRegs.first(where: { $0.oldReg == dependentReg.regToNum })!
+                                oldReadReg = renamedReg.oldReg
+                                let newReg = renamedReg.newReg
+                                let stageOffset = schedule.compactMap { $0.stage }.max()! - stage(bundle: bundle(addr: renamedReg.id, block: 1))
+                                return newReg + stageOffset
+                            }
+                            
+                            if newReadRegs.count == 1 {
+                                // Must ensure other read regs are not potentially overwritten
+                                at = assignReadReg(newReadRegs[0], oldReadReg: oldReadReg, in: at, toEntry: entry, atIndex: bIndex)
+                            } else {
+                                // We can safely overwrite both read regs
+                                at = assignReadReg(newReadRegs.map { $0.toReg }, in: at, toEntry: entry, atIndex: bIndex)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -238,6 +266,28 @@ struct RegisterAllocator {
             at.table[index].Mem.instr?.destReg = newDestReg
         case .Branch:
             at.table[index].Branch.instr?.destReg = newDestReg
+        }
+        
+        return at
+    }
+    
+    /// Assigns read reg without checking previous read reg
+    private func assignReadReg(_ newReadRegs: [String], in allocTable: AllocatedTable, toEntry entry: RegisterAllocEntry, atIndex index: Int) -> AllocatedTable {
+        var at = allocTable
+        
+        switch entry.execUnit {
+        case .ALU(let i):
+            if i == 0 {
+                at.table[index].ALU0.instr?.readRegs = newReadRegs
+            } else {
+                at.table[index].ALU1.instr?.readRegs = newReadRegs
+            }
+        case .Mult:
+            at.table[index].Mult.instr?.readRegs = newReadRegs
+        case .Mem:
+            at.table[index].Mem.instr?.readRegs = newReadRegs
+        case .Branch:
+            at.table[index].Branch.instr?.readRegs = newReadRegs
         }
         
         return at
@@ -387,7 +437,6 @@ struct RegisterAllocator {
     private func linkRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
         // All readRegs need to be recomputed.
         var at = allocTable
-        print("renamed regs: ", at.renamedRegs)
         allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 if let instr = entry.instr, let readRegs = instr.readRegs, !readRegs.isEmpty  {
@@ -448,10 +497,6 @@ struct RegisterAllocator {
     private func fixInterLoopDep(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         
-        // Find registers that are overwritten in loop, ie interloop dependencies where one must be from bb0
-        let bb0 = depTable
-            .filter { $0.block == 0 && $0.instr.isProducingInstruction }
-            .compactMap { $0.destReg?.regToNum }
         var oldOverwrittenRegs = depTable
         // If in block 1 and has two interloop dep, then it is of interest
             .filter { $0.block == 1 && $0.interloopDep.count == 2 }
