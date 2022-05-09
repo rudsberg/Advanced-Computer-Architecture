@@ -83,7 +83,7 @@ struct RegisterAllocator {
     private func allocNonRotatingRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         var nextReg = 1
-        let regsToRename = producingRegFromDep(deps: { $0.loopInvariantDep }, inBlock: 0).map { $0.1 }
+        let regsToRename = producingOldRegFromDep(deps: { $0.loopInvariantDep }, inBlock: 0).map { $0.1 }
         
         allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
@@ -124,8 +124,8 @@ struct RegisterAllocator {
         return at
     }
     
-    /// Given list of dependencies (as addr) return the (bundle, reg) that is producing that value
-    private func producingRegFromDep(deps: (DependencyTableEntry) -> [String], inBlock block: Int) -> [(Int, String)] {
+    /// Given list of dependencies (as addr) return the (bundle, old reg) that is producing that value
+    private func producingOldRegFromDep(deps: (DependencyTableEntry) -> [String], inBlock block: Int) -> [(Int, String)] {
         let res = depTable.filter { instr in
             guard instr.block == block, instr.instr.isProducingInstruction else { return false }
             return depTable.contains(where: { depEntry in
@@ -166,12 +166,14 @@ struct RegisterAllocator {
                         // x_D = x_S + (St(D) − St(S))
                         let localDep = deps.localDep.map { Int($0)! }
                         if !localDep.isEmpty {
-                            let (bundle_addr, x_s) = producingRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
+                            let (bundle_addr, oldReg) = producingOldRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
+                            let x_s = at.renamedRegs.first(where: { $0.oldReg == oldReg.regToAddr })!.newReg
                             let St_S = stage(bundle: bundle_addr)
                             let St_d = stage(bundle: bundle(addr: instr.addr, block: 1))
                             assert(St_d - St_S >= 0)
-                            let x_D = x_s.regToAddr + (St_d - St_S)
-                            at = assignReadReg(x_D, oldReadReg: localDep[0], in: at, toEntry: entry, atIndex: bIndex)
+                            let x_D = x_s + (St_d - St_S)
+                            let oldReadReg = depTable.first(where: { $0.instr.destReg != nil && $0.instr.isProducingInstruction && $0.instr.destReg!.regToAddr == localDep[0] })!.instr.destReg!
+                            at = assignReadReg(x_D, oldReadReg: oldReadReg.regToAddr, in: at, toEntry: entry, atIndex: bIndex)
                         }
                     }
                 }
