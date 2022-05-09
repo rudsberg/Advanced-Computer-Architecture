@@ -9,13 +9,14 @@ import Foundation
 
 struct RegisterAllocator {
     let depTable: DependencyTable
+    let schedule: Schedule
     
     // MARK: - loop.pip
-    func alloc_r(schedule: Schedule) -> AllocatedTable {
-        var at = createInitialAllocTable(schedule: schedule, depTable: depTable)
+    func alloc_r() -> AllocatedTable {
+        var at = createInitialAllocTable(depTable: depTable)
         
         // Phase 1: allocr allocates fresh unique rotating registers to each instruction producing a new value in BB1
-        at = allocFreshRegisters_r(at, schedule)
+        at = allocFreshRegisters_r(at)
         
         // Phase 2: alloc nonrotating registers for each loop invariant
         at = allocNonRotatingRegisters(at)
@@ -31,7 +32,7 @@ struct RegisterAllocator {
         return at
     }
     
-    private func allocFreshRegisters_r(_ allocTable: AllocatedTable, _ schedule: Schedule) -> AllocatedTable {
+    private func allocFreshRegisters_r(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         // id -> prev reg, id -> new reg
         let assignJump = schedule.compactMap { $0.stage }.max()! + 1 + 1 // first +1 for num stages then +1 for equation
@@ -82,11 +83,7 @@ struct RegisterAllocator {
     private func allocNonRotatingRegisters(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         var nextReg = 1
-        // Checks the bb0 producing instructions, for each, check if any instructions are loop invariant on it
-        let regsToRename = depTable.filter { instr in
-            guard instr.block == 0, instr.instr.isProducingInstruction else { return false }
-            return depTable.contains(where: { $0.loopInvariantDep.map({ Int($0)! }).contains(instr.instr.addr) })
-        }.map { $0.destReg! }
+        let regsToRename = producingRegFromDep(deps: { $0.loopInvariantDep }, inBlock: 0).map { $0.1 }
         
         allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
@@ -127,6 +124,29 @@ struct RegisterAllocator {
         return at
     }
     
+    /// Given list of dependencies (as addr) return the (bundle, reg) that is producing that value
+    private func producingRegFromDep(deps: (DependencyTableEntry) -> [String], inBlock block: Int) -> [(Int, String)] {
+        let res = depTable.filter { instr in
+            guard instr.block == block, instr.instr.isProducingInstruction else { return false }
+            return depTable.contains(where: { depEntry in
+                deps(depEntry)
+                    .map({ Int($0)! })
+                    .contains(instr.instr.addr)
+            })
+        }
+        return res.map { depEntry in
+            return (bundle(addr: depEntry.addr, block: block), depEntry.destReg!)
+        }
+    }
+    
+    /// Gets the scheduled bundle for addr with PC=addr in given block
+    private func bundle(addr: Int, block: Int) -> Int {
+        return schedule.filter({ $0.block == block }).first(where: { r in
+            let a = addr
+            return r.ALU0 == a || r.ALU1 == a || r.Mult == a || r.Mem == a || r.Branch == a
+        })!.addr
+    }
+    
     private func linkOperands_r(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         allocTable.table.enumerated().forEach { (bIndex, b) in
@@ -142,12 +162,26 @@ struct RegisterAllocator {
                             at = assignReadReg(renamed.newReg, oldReadReg: renamed.oldReg, in: at, toEntry: entry, atIndex: bIndex)
                         }
                         
-                        
+                        // For local loop dependencies, the consumed register name needs to be corrected by the number of times RRB changed since the producer wrote to that register.
+                        // x_D = x_S + (St(D) − St(S))
+                        let localDep = deps.localDep.map { Int($0)! }
+                        if !localDep.isEmpty {
+                            let (bundle_addr, x_s) = producingRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
+                            let St_S = stage(bundle: bundle_addr)
+                            let St_d = stage(bundle: bundle(addr: instr.addr, block: 1))
+                            assert(St_d - St_S >= 0)
+                            let x_D = x_s.regToAddr + (St_d - St_S)
+                            at = assignReadReg(x_D, oldReadReg: localDep[0], in: at, toEntry: entry, atIndex: bIndex)
+                        }
                     }
                 }
             }
         }
         return at
+    }
+    
+    private func stage(bundle: Int) -> Int {
+        schedule.first(where: { $0.addr == bundle })!.stage!
     }
     
     private func assignReadReg(_ newReadReg: Int, oldReadReg: Int, in allocTable: AllocatedTable, toEntry entry: RegisterAllocEntry, atIndex index: Int) -> AllocatedTable {
@@ -195,8 +229,8 @@ struct RegisterAllocator {
     }
     
     // MARK: - loop
-    func alloc_b(schedule: Schedule) -> AllocatedTable {
-        var at = createInitialAllocTable(schedule: schedule, depTable: depTable)
+    func alloc_b() -> AllocatedTable {        
+        var at = createInitialAllocTable(depTable: depTable)
         
         // Phase 1: Allocate fresh unique registers to each instruction producing a new value
         // Output: all destinations registers specified
@@ -219,7 +253,7 @@ struct RegisterAllocator {
     }
     
     /// Maps schedule to alloc table, containing the instructions rather than only their original address
-    private func createInitialAllocTable(schedule: Schedule, depTable: DependencyTable) -> AllocatedTable {
+    private func createInitialAllocTable(depTable: DependencyTable) -> AllocatedTable {
         var table: [RegisterAllocRow] = schedule.map {
             func find(_ addr: Int?, _ unit: ExecutionUnit) -> RegisterAllocEntry {
                 if let addr = addr {
@@ -330,7 +364,7 @@ struct RegisterAllocator {
         let newRegs = allocTable.renamedRegs
             .filter { oldReg.regToAddr == $0.oldReg }
             .map { ($0.block, $0.newReg.toReg) }
-
+        
         if newRegs.count == 2 {
             if block == 1 {
                 // TODO: what's the intention to do here???

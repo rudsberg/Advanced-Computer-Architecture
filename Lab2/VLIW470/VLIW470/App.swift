@@ -26,7 +26,7 @@ struct App {
         let schedule = Scheduler(depTable: depTable).schedule_loop()
         
         // loop - Perform Register allocation
-        let allocatedTable = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
+        let allocatedTable = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_b()
         
         // loop - print the results
         let logger = Logger()
@@ -37,6 +37,7 @@ struct App {
         // Firstly, we allocate a fresh unique register to each instruction producing a new value. Result: all destination registers will be specified
         // Secondly, links each operand to the register newly allocated in the previous phase. Result: all destination and operand registers set, but not mov instructions
         // Thirdly, fix the interloop dependencies.
+        // TODO: reg allocator mmust be have new instance
 
         // MARK: loop – Print program
 

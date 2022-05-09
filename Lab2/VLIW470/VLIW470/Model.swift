@@ -41,6 +41,7 @@ struct RegisterAllocRow {
 struct RegisterAllocEntry {
     let execUnit: ExecutionUnit
     var instr: Instruction? = nil
+    
 }
 
 struct DependencyTableEntry {

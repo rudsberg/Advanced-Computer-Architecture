@@ -152,7 +152,7 @@ class VLIW470UnitTests: XCTestCase {
         let s = Scheduler(depTable: depTable)
         let schedule = s.schedule_loop()
         
-        let res = RegisterAllocator(depTable: depTable).alloc_b(schedule: schedule)
+        let res = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_b()
         let t = res.table
         
     }
@@ -164,7 +164,7 @@ class VLIW470UnitTests: XCTestCase {
         let s = Scheduler(depTable: depTable)
         let schedule = s.schedule_loop_pip()
         
-        let res = RegisterAllocator(depTable: depTable).alloc_r(schedule: schedule)
+        let res = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_r()
         let t = res.table
         
         XCTAssertEqual(t[1].ALU1.instr?.addr.toChar, "D")
@@ -178,10 +178,14 @@ class VLIW470UnitTests: XCTestCase {
         
         XCTAssertEqual(t[3].Mult.instr?.addr.toChar, "F")
         XCTAssertEqual(t[3].Mult.instr?.destReg?.regToAddr, 38)
-        XCTAssertEqual(t[3].Mult.instr?.readRegs?[1].regToAddr, 1)
+//        XCTAssertEqual(t[3].Mult.instr?.readRegs?[0].regToAddr, 35+0+0) For local loop dependencies
+//        XCTAssertEqual(t[3].Mult.instr?.readRegs?[1].regToAddr, 1) For local loop dependencies
         
         XCTAssertEqual(t[4].Mult.instr?.addr.toChar, "G")
         XCTAssertEqual(t[4].Mult.instr?.destReg?.regToAddr, 41)
+//        XCTAssertEqual(t[4].Mult.instr?.readRegs?[1].regToAddr, 35+0+0) For local loop dependencies
+        
+//        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToAddr, 38+0+1) For local loop dependencies
     }
     
     func testVLIWSimple() throws {
