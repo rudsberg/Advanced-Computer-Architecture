@@ -52,10 +52,13 @@ struct DependencyTableEntry {
     let instr: Instruction
     let destReg: String?
     /// If the producer and the consumer are in the same basic block
+    // TODO: refactor into String
     let localDep: [String] // ID
     /// If the producer and consumer are in different basic blocks, and the consumer is in the loop body
     let interloopDep: [String]
+    // TODO: refactor into String
     let loopInvariantDep: [String]
+    // TODO: refactor into String
     let postLoopDep: [String]
 }
 

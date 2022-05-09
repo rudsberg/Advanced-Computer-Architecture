@@ -166,9 +166,6 @@ struct RegisterAllocator {
                         // x_D = x_S + (St(D) − St(S))
                         let localDep = deps.localDep.map { Int($0)! }
                         if !localDep.isEmpty {
-                            if instr.addr.toChar == "H" {
-                                
-                            }
                             let (bundle_addr, oldReg) = producingOldRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
                             let x_s = at.renamedRegs.first(where: { $0.oldReg == oldReg.regToAddr })!.newReg
                             let St_S = stage(bundle: bundle_addr)
@@ -176,6 +173,26 @@ struct RegisterAllocator {
                             assert(St_d - St_S >= 0)
                             let x_D = x_s + (St_d - St_S)
                             let oldReadReg = at.renamedRegs.first(where: { $0.oldReg == depTable.first(where: { d in d.addr == localDep[0] })!.destReg!.regToAddr })!.oldReg
+                            at = assignReadReg(x_D, oldReadReg: oldReadReg, in: at, toEntry: entry, atIndex: bIndex)
+                        }
+                        
+                        // Interloop dependencies
+                        // x_D = x_S + (St(D) − St(S)) + 1
+                        let interloopDeps = deps.interloopDep.map { Int($0)! }
+                        if instr.addr.toChar == "H" {
+                            
+                        }
+                        if !interloopDeps.isEmpty {
+                            let interloopDepAddr = interloopDeps.max()!
+                            // Find the old destReg of instruction at this address
+                            let oldDestReg = depTable.first(where: { $0.addr == interloopDepAddr })!.destReg!
+                            // Find what it now points to
+                            let x_s = at.renamedRegs.first(where: { $0.oldReg == oldDestReg.regToAddr })!.newReg
+                            let St_S = stage(bundle: bundle(addr: interloopDepAddr, block: 1))
+                            let St_d = stage(bundle: bundle(addr: instr.addr, block: 1))
+                            assert(St_d - St_S >= 0)
+                            let x_D = x_s + (St_d - St_S) + 1
+                            let oldReadReg = at.renamedRegs.first(where: { $0.oldReg == depTable.first(where: { d in d.addr == interloopDepAddr })!.destReg!.regToAddr })!.oldReg
                             at = assignReadReg(x_D, oldReadReg: oldReadReg, in: at, toEntry: entry, atIndex: bIndex)
                         }
                     }
@@ -373,6 +390,7 @@ struct RegisterAllocator {
         if newRegs.count == 2 {
             if block == 1 {
                 // TODO: what's the intention to do here???
+                //
                 // return the one from bb0
                 return newRegs.first(where: { $0.0 == 0 })!.1
             } else {

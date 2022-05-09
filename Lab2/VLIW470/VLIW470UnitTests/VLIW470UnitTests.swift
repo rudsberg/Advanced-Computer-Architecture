@@ -172,19 +172,24 @@ class VLIW470UnitTests: XCTestCase {
         
         XCTAssertEqual(t[2].ALU0.instr?.addr.toChar, "I")
         XCTAssertEqual(t[2].ALU0.instr?.destReg?.regToAddr, 32)
-        
+        XCTAssertEqual(t[2].ALU0.instr?.readRegs?[0].regToAddr, 32+1)
         XCTAssertEqual(t[2].Mem.instr?.addr.toChar, "E")
         XCTAssertEqual(t[2].Mem.instr?.destReg?.regToAddr, 35)
+        XCTAssertEqual(t[2].Mem.instr?.readRegs?[0].regToAddr, 32+1)
         
         XCTAssertEqual(t[3].Mult.instr?.addr.toChar, "F")
         XCTAssertEqual(t[3].Mult.instr?.destReg?.regToAddr, 38)
         XCTAssertEqual(t[3].Mult.instr?.readRegs?[0].regToAddr, 35+0+0)
-        // TODO: local loop dependencies fucks up the assigned reg for loop invariant
         XCTAssertEqual(t[3].Mult.instr?.readRegs?[1].regToAddr, 1)
         
         XCTAssertEqual(t[4].Mult.instr?.addr.toChar, "G")
         XCTAssertEqual(t[4].Mult.instr?.destReg?.regToAddr, 41)
+        XCTAssertEqual(t[4].Mult.instr?.readRegs?[0].regToAddr, 41+1+0)
         XCTAssertEqual(t[4].Mult.instr?.readRegs?[1].regToAddr, 35+0+0)
+        
+        XCTAssertEqual(t[6].Mem.instr?.addr.toChar, "H")
+//        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToAddr, 38+0+1)
+        XCTAssertEqual(t[6].Mem.instr?.readRegs?[1].regToAddr, 32+1+1)
         
 //        XCTAssertEqual(t[6].Mem.instr?.readRegs?[0].regToAddr, 38+0+1)  // TODO: after store reg has been assigned
     }

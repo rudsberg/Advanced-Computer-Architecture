@@ -160,8 +160,7 @@ struct Scheduler {
         schedule = createLoopSchedule(depTable: depTable)
         
         // Ensures II is obeyed
-        // TODO: ask what to do here
-//        schedule = recomputeIfNeeded(schedule: schedule)
+        schedule = recomputeIfNeeded(schedule: schedule)
         
         // Print for debugging
         print("\n======= Schedule =======")
@@ -283,7 +282,7 @@ struct Scheduler {
     /// Recomputes the schedule if needed, depending on the II
     private func recomputeIfNeeded(schedule: Schedule) -> Schedule {
         var schedule = schedule
-        let initialII = minimalII()
+        let initialII = schedule.filter { $0.block == 1 }.count
         let validII = validII(for: schedule, initialII: initialII)
         if initialII < validII {
             // Move down the instruction the difference of initialII and validII
