@@ -212,14 +212,28 @@ class VLIW470UnitTests: XCTestCase {
         let loopPreparer = LoopPreparer(schedule: schedule, allocTable: res)
         let l = loopPreparer.prepare()
         
+        XCTAssertEqual(l.table.count, 7)
+        
         let mov1 = l.table[2].ALU0.instr as! MoveInstruction
         XCTAssertEqual(mov1.type, .setPredicateReg)
         XCTAssertEqual(mov1.reg, 32)
         XCTAssertEqual(mov1.val, 1) // true
+        
         let mov2 = l.table[2].ALU1.instr as! MoveInstruction
         XCTAssertEqual(mov2.type, .setSpecialRegWithImmediate)
         XCTAssertEqual(mov2.destReg, "EC")
         XCTAssertEqual(mov2.val, 1)
+        
+        XCTAssertEqual(l.table[3].ALU0.instr?.addr.toChar, "I")
+        XCTAssertEqual(l.table[3].Mem.instr?.addr.toChar, "E")
+
+        XCTAssertEqual(l.table[4].Mult.instr?.addr.toChar, "F")
+        XCTAssertEqual(l.table[4].Mem.instr?.addr.toChar, "H")
+
+        XCTAssertEqual(l.table[5].Mult.instr?.addr.toChar, "G")
+        XCTAssertEqual(l.table[5].Branch.instr?.addr.toChar, "J")
+        
+        XCTAssertEqual(l.table[6].Mem.instr?.addr.toChar, "K")
     }
     
     func testVLIWSimple() throws {
