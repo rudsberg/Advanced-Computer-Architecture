@@ -9,40 +9,35 @@ import Foundation
 
 struct Config {
     let programFile: String
-    let outputFile: String
+    let outputFileSimple: String
+    let outputFilePip: String
 }
 
 struct App {
     let config: Config
     
     func run() throws {
-        // loop – Parse program
+        // Parse program
         let program = try Parser().parseInstructions(fromFile: config.programFile)
 
-        // loop – Build dependency table
+        // Build dependency table
         let depTable = DependencyBuilder().createTable(fromProgram: program)
 
-        // loop – Perform ASAP Scheduling
-        let schedule = Scheduler(depTable: depTable).schedule_loop()
+        // Perform ASAP Scheduling
+        let scheduler = Scheduler(depTable: depTable)
+        let scheduleSimple = scheduler.schedule_loop()
+        let schedulePip = scheduler.schedule_loop_pip()
         
-        // loop - Perform Register allocation
-        let allocatedTable = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_b()
+        // Perform Register allocation
+        let allocatedTableSimple = RegisterAllocator(depTable: depTable, schedule: scheduleSimple).alloc_b()
+        var allocatedTablePip = RegisterAllocator(depTable: depTable, schedule: schedulePip).alloc_r()
         
-        // loop - print the results
+        // Prepare loop for pip
+        allocatedTablePip = LoopPreparer(schedule: schedulePip, allocTable: allocatedTablePip).prepare()
+        
+        // Print the results
         let logger = Logger()
-        try logger.log(allocTable: allocatedTable, documentName: config.outputFile)
-        
-        // MARK: loop – Register Allocation (alloc_b)
-        // Output: extended schedule table with register allocated
-        // Firstly, we allocate a fresh unique register to each instruction producing a new value. Result: all destination registers will be specified
-        // Secondly, links each operand to the register newly allocated in the previous phase. Result: all destination and operand registers set, but not mov instructions
-        // Thirdly, fix the interloop dependencies.
-        // TODO: reg allocator mmust be have new instance
-
-        // MARK: loop – Print program
-
-        // TODO: same steps for loop.pip
-        // MARK: loop.pip – Prepare loop for execution
-
+        try logger.log(allocTable: allocatedTableSimple, documentName: config.outputFileSimple)
+        try logger.log(allocTable: allocatedTablePip, documentName: config.outputFilePip)
     }
 }

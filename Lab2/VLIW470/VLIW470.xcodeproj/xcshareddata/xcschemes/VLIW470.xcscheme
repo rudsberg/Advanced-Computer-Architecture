@@ -70,7 +70,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "handout-loop.json"
+            argument = "handout-simple.json"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "handout-pip.json"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -124,6 +124,7 @@ class VLIW470UnitTests: XCTestCase {
          ]
          */
         // Should create a loop of size 3 due to the interloop dep
+        // TODO:
         
         let program = try createProgram(fromFile: "test3.json")
         let db = DependencyBuilder()
@@ -214,15 +215,15 @@ class VLIW470UnitTests: XCTestCase {
         
         XCTAssertEqual(l.table.count, 7)
         
-        let mov1 = l.table[2].ALU0.instr as! MoveInstruction
-        XCTAssertEqual(mov1.type, .setPredicateReg)
-        XCTAssertEqual(mov1.reg, 32)
-        XCTAssertEqual(mov1.val, 1) // true
-        
-        let mov2 = l.table[2].ALU1.instr as! MoveInstruction
+        let mov2 = l.table[2].ALU0.instr as! MoveInstruction
         XCTAssertEqual(mov2.type, .setSpecialRegWithImmediate)
         XCTAssertEqual(mov2.destReg, "EC")
         XCTAssertEqual(mov2.val, 1)
+        
+        let mov1 = l.table[2].ALU1.instr as! MoveInstruction
+        XCTAssertEqual(mov1.type, .setPredicateReg)
+        XCTAssertEqual(mov1.reg, 32)
+        XCTAssertEqual(mov1.val, 1) // true
         
         XCTAssertEqual(l.table[3].ALU0.instr?.addr.toChar, "I")
         XCTAssertEqual(l.table[3].ALU0.instr?.predicate, 32)
@@ -242,15 +243,23 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(l.table[6].Mem.instr?.addr.toChar, "K")
     }
     
-    func testVLIWSimple() throws {
+    func testProvidedExamples() throws {
         FileIOController.folderPath = folderPath
-        let config = Config(programFile: "handout.json", outputFile: "handout-loop.json")
+        let config = Config(programFile: "handout.json", outputFileSimple: "handout-simple.json", outputFilePip: "handout-pip.json")
         let app = App(config: config)
         try app.run()
         
-        let output = try FileIOController.shared.read([[String]].self, documentName: "handout-loop.json")
-        let oracle = try FileIOController.shared.read([[String]].self, documentName: "vliwsimple.json")
+        let outputSimple = try FileIOController.shared.read([[String]].self, documentName: "handout-simple.json")
+        let oracleSimple = try FileIOController.shared.read([[String]].self, documentName: "vliwsimple.json")
+
+        let outputPip = try FileIOController.shared.read([[String]].self, documentName: "handout-pip.json")
+        let oraclePip = try FileIOController.shared.read([[String]].self, documentName: "vliw470.json")
         
+        verifyProgram(outputSimple, toOracle: oracleSimple)
+        verifyProgram(outputPip, toOracle: oraclePip)
+    }
+    
+    private func verifyProgram(_ output: [[String]], toOracle oracle: [[String]]) {
         XCTAssertEqual(output.count, oracle.count)
         zip(output, oracle).forEach { (r1, r2) in
             XCTAssertEqual(r1, r2.map { $0.trimmingCharacters(in: .whitespaces) })

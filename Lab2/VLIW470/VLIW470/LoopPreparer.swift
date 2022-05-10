@@ -13,10 +13,7 @@ struct LoopPreparer {
     
     func prepare() -> AllocatedTable {
         var at = allocTable
-        
-        // In bb0, prepare the loop by setting first predicate register to true and EC to 1
         at = prepareBeforeLoop(at)
-                
         at = prepareLoopBody(at)
         
         print("\n======= Prepared loop =======")
@@ -48,15 +45,15 @@ struct LoopPreparer {
         var instrToAdd: [Instruction] = [
             MoveInstruction(
                 addr: addrBeforeLoop,
-                type: .setPredicateReg,
-                reg: 32,
-                val: 1
-            ),
-            MoveInstruction(
-                addr: addrBeforeLoop,
                 type: .setSpecialRegWithImmediate,
                 reg: MoveInstruction.EC,
                 val: schedule.numStages - 1
+            ),
+            MoveInstruction(
+                addr: addrBeforeLoop,
+                type: .setPredicateReg,
+                reg: 32,
+                val: 1
             )
         ]
         
@@ -160,6 +157,13 @@ struct LoopPreparer {
         at.table.append(contentsOf: allocTable.table.filter { $0.block == 2 })
         
         at = updateAddrToBeSequential(at)
+         
+        // Update loop to be loop.pip and its loop adress
+        let loopIndex = at.table.firstIndex(where: { $0.Branch.instr != nil })!
+        var loopInstr = at.table[loopIndex].Branch.instr as! LoopInstruction
+        loopInstr.type = .loop_pip
+        loopInstr.loopStart = at.table.first(where: { $0.block == 1 })!.addr
+        at.table[loopIndex].Branch.instr = loopInstr
         
         return at
     }

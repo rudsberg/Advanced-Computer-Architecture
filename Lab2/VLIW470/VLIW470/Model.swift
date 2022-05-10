@@ -155,7 +155,17 @@ extension Instruction {
 
 extension Optional where Wrapped == Instruction {
     var string: String {
-        self == nil ? "nop" : self!.print
+        self == nil ? "nop" : self!.addPredicate(to: self!.print)
+    }
+}
+
+extension Instruction {
+    func addPredicate(to string: String) -> String {
+        if let predicate = self.predicate {
+            return "(p\(predicate)) \(string)"
+        } else {
+            return string
+        }
     }
 }
 
@@ -274,7 +284,7 @@ struct LoopInstruction: Instruction {
         set {}
     }
     
-    let type: LoopInstructionType
+    var type: LoopInstructionType
     var loopStart: Int
 }
 
@@ -309,16 +319,18 @@ struct MoveInstruction: Instruction {
     static let EC = -2
     
     var print: String {
+        var arg1: String! = destReg!
         var arg2: String!
         switch type {
         case .setPredicateReg:
+            arg1 = "p" + "\(destReg!.regToNum)"
             arg2 = val == 0 ? "false" : "true"
         case .setSpecialRegWithImmediate, .setDestRegWithImmediate:
             arg2 = "\(val)"
         case .setDestRegWithSourceReg:
             arg2 = val.toReg
         }
-        return "\(name) \(destReg!), \(arg2!)"
+        return "\(name) " + arg1 + ", " + arg2
     }
     var addr: Int
     var name: String {

@@ -9,14 +9,16 @@ import Foundation
 
 // Format of arguments:
 // 1. Path to folder having program files and where logging will be done
-// 2. Program file name to run (must be in folder)
-// 3. Log file name (will be saved in folder)
+// 2. Program file name to run including .json extension (must be in folder)
+// 3. Log file name of simple VLIW including .json extension (will be saved in folder)
+// 4. Log file name of pip VLIP including .json extension
 
 let arguments = CommandLine.arguments
 let folderPath = arguments[1]
 FileIOController.folderPath = folderPath
 let programFile = arguments[2]
-let outputFile = arguments[3]
+let outputFileSimple = arguments[3]
+let outputFilePip = arguments[4]
 
-let config = Config(programFile: programFile, outputFile: outputFile)
+let config = Config(programFile: programFile, outputFileSimple: outputFileSimple, outputFilePip: outputFilePip)
 try App(config: config).run()
