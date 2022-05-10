@@ -33,8 +33,10 @@ struct Scheduler {
             }
         }
         
+        schedule.II = II
+        
         print("\n======= Schedule pip =======")
-        schedule.forEach({ print($0) })
+        schedule.rows.forEach({ print($0) })
         
         return schedule
     }
@@ -60,9 +62,9 @@ struct Scheduler {
                     // Create the loop with the stages
                     for stage in 0...loopStages-1 {
                         for offsetInStage in 0...II-1 {
-                            schedule.append(.init(
-                                addr: schedule.filter { $0.block == 0 }.count + stage*II + offsetInStage,
-                                addrWithStage: schedule.filter { $0.block == 0 }.count + offsetInStage,
+                            schedule.rows.append(.init(
+                                addr: schedule.rows.filter { $0.block == 0 }.count + stage*II + offsetInStage,
+                                addrWithStage: schedule.rows.filter { $0.block == 0 }.count + offsetInStage,
                                 stage: stage,
                                 block: 1
                             ))
@@ -98,7 +100,7 @@ struct Scheduler {
             if entry.instr.execUnit != .Branch {
                 // Earliest stage must be less than or eqal of max addr of current stage
                 earliestAddr = earliestScheduledBundle(for: entry, in: schedule)
-                let maxAddrInStage = schedule.filter({ $0.block == 1 && $0.stage! == stage }).map({ $0.addr }).max()!
+                let maxAddrInStage = schedule.rows.filter({ $0.block == 1 && $0.stage! == stage }).map({ $0.addr }).max()!
                 if earliestAddr! > maxAddrInStage {
                     continue
                 }
@@ -109,9 +111,9 @@ struct Scheduler {
                 }
             } else {
                 // Schedule loop in the first stage
-                let i = schedule.lastIndex(where: { $0.block == 1 && $0.stage == 0 })!
+                let i = schedule.rows.lastIndex(where: { $0.block == 1 && $0.stage == 0 })!
                 var s = schedule
-                s[i].Branch = entry.addr
+                s.rows[i].Branch = entry.addr
                 return s
             }
             
@@ -123,9 +125,9 @@ struct Scheduler {
             
             // From firstPossibleAddrToAdd, check each bundle within current stage, if found one that is
             // not violating contention, then schedule on this spot
-            for bundle in schedule.filter({ $0.stage == stage && $0.addr >= firstPossibleAddrToAdd }) {
+            for bundle in schedule.rows.filter({ $0.stage == stage && $0.addr >= firstPossibleAddrToAdd }) {
                 // Check if it violates contention
-                let conflictingRows = schedule.filter({
+                let conflictingRows = schedule.rows.filter({
                     // Same row another stage & exec unit busy
                     $0.addrWithStage == bundle.addrWithStage && $0.unitBusy(unit: entry.instr.execUnit)
                 })
@@ -143,7 +145,7 @@ struct Scheduler {
     private func execUnitBusyInStage(stage: Int, earliestAddr: Int, maxAddrInStage: Int, entry: DependencyTableEntry, schedule: Schedule) -> Bool {
         var currAddr = earliestAddr
         while (currAddr <= maxAddrInStage) {
-            if nil != update(schedule[currAddr], ifCanBeHandled: entry) {
+            if nil != update(schedule.rows[currAddr], ifCanBeHandled: entry) {
                 return false
             }
             currAddr += 1
@@ -164,7 +166,7 @@ struct Scheduler {
         
         // Print for debugging
         print("\n======= Schedule =======")
-        schedule.forEach({ print($0) })
+        schedule.rows.forEach({ print($0) })
          
         return schedule
     }
@@ -196,7 +198,7 @@ struct Scheduler {
             .flatMap { $0 }
             .map { Int($0)! }
 
-        let earliestPossibleAddress = schedule
+        let earliestPossibleAddress = schedule.rows
             // Filter out states that have have an dependency with entry
             .filter { allDeps.contains($0.ALU0 ?? -1) || allDeps.contains($0.ALU1 ?? -1) || allDeps.contains($0.Mult ?? -1) || allDeps.contains($0.Mem ?? -1) || allDeps.contains($0.Branch ?? -1) }
             // Add latency to them. MUL latency of 3, all else 1
@@ -214,12 +216,12 @@ struct Scheduler {
     
     private func firstAddrInBlock(block: Int, in schedule: Schedule) -> Int {
         // Find block start by looking at highest bundle addr of previous block, then adding 1
-        block == 0 ? 0 : schedule.last(where: { $0.block == block - 1 })!.addr + 1
+        block == 0 ? 0 : schedule.rows.last(where: { $0.block == block - 1 })!.addr + 1
     }
     
     private func lastAddrInBlock(block: Int, in schedule: Schedule) -> Int {
         // Find block start by looking at highest bundle addr of previous block, then adding 1
-        schedule.last(where: { $0.block == block })!.addr
+        schedule.rows.last(where: { $0.block == block })!.addr
     }
 
     /// Starts trying to add entry to schedule at index, will increase schedule size if needed, and add earliest possible to the correct unit. Moves down if occupied until not.
@@ -231,14 +233,14 @@ struct Scheduler {
         
         while (true) {
             // If exceed schedule, append empty rows
-            while (i >= schedule.count) {
-                let newAddr = schedule.isEmpty ? 0 : schedule.map { $0.addr }.max()! + 1
-                schedule.append(.init(addr: newAddr, block: entry.block))
+            while (i >= schedule.rows.count) {
+                let newAddr = schedule.rows.isEmpty ? 0 : schedule.rows.map { $0.addr }.max()! + 1
+                schedule.rows.append(.init(addr: newAddr, block: entry.block))
             }
             
             // Check if exec unit slot is available and create an updated row
-            if let updatedRow = update(schedule[i], ifCanBeHandled: entry) {
-                schedule[i] = updatedRow
+            if let updatedRow = update(schedule.rows[i], ifCanBeHandled: entry) {
+                schedule.rows[i] = updatedRow
                 break
             } else {
                 i += 1
@@ -282,30 +284,33 @@ struct Scheduler {
     /// Recomputes the schedule if needed, depending on the II
     private func recomputeIfNeeded(schedule: Schedule) -> Schedule {
         var schedule = schedule
-        let initialII = schedule.filter { $0.block == 1 }.count
+        let initialII = schedule.rows.filter { $0.block == 1 }.count
         let validII = validII(for: schedule, initialII: initialII)
         if initialII < validII {
             // Move down the instruction the difference of initialII and validII
             let moveDistance = validII - initialII
             
             // Insert new bundles between loop and bb2
-            let oldLoopIndex = schedule.firstIndex(where: { $0.Branch != nil })!
+            let oldLoopIndex = schedule.rows.firstIndex(where: { $0.Branch != nil })!
             let newLoopIndex = oldLoopIndex + moveDistance
             var currInsertIndex = oldLoopIndex + 1
             // Insert empty bundles until we reach the new loop index
             while (currInsertIndex != newLoopIndex) {
-                schedule.insert(.init(addr: currInsertIndex, block: 1), at: currInsertIndex)
+                schedule.rows.insert(.init(addr: currInsertIndex, block: 1), at: currInsertIndex)
                 currInsertIndex += 1
             }
             assert(currInsertIndex == newLoopIndex)
             
             // Insert the new bundle with the loop instruction
             var newBundle = ScheduleRow(addr: newLoopIndex, block: 1)
-            newBundle.Branch = schedule[oldLoopIndex].Branch!
-            schedule.insert(newBundle, at: newLoopIndex)
+            newBundle.Branch = schedule.rows[oldLoopIndex].Branch!
+            schedule.rows.insert(newBundle, at: newLoopIndex)
             
             // Remove the branch instruction from old position
-            schedule[oldLoopIndex].Mem = nil
+            schedule.rows[oldLoopIndex].Mem = nil
+            
+            // Update II
+            schedule.II = validII
         }
         return schedule
     }
@@ -343,7 +348,7 @@ struct Scheduler {
 
     /// Check if equation holds for all interloop instructions. If not, increase II and try again
     private func equationHolds(for schedule: Schedule, II: Int) -> Bool {
-        let loopInstructions = schedule.filter { $0.block == 1 }
+        let loopInstructions = schedule.rows.filter { $0.block == 1 }
         // Group by ALU types
         let iALU0 = loopInstructions.filter { $0.ALU0 != nil }.map { ($0.addr, ExecutionUnit.ALU(0)) }
         let iALU1 = loopInstructions.filter { $0.ALU1 != nil }.map { ($0.addr, ExecutionUnit.ALU(1)) }

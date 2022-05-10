@@ -9,7 +9,6 @@ import Foundation
 
 typealias Program = [Instruction]
 typealias DependencyTable = [DependencyTableEntry]
-typealias Schedule = [ScheduleRow]
 
 struct AllocatedTable {
     var table: [RegisterAllocRow]
@@ -31,6 +30,7 @@ struct RenamedReg {
 struct RegisterAllocRow {
     let block: Int
     let addr: Address
+    let addrWithStage: Address?
     var ALU0 = RegisterAllocEntry(execUnit: .ALU(0))
     var ALU1 = RegisterAllocEntry(execUnit: .ALU(1))
     var Mult = RegisterAllocEntry(execUnit: .Mult)
@@ -88,6 +88,14 @@ enum ExecutionUnit: Equatable {
     }
 }
 
+struct Schedule {
+    var II = 0
+    var rows = [ScheduleRow]()
+    var numStages: Int {
+        rows.compactMap { $0.stage }.max()! + 1
+    }
+}
+
 typealias Address = Int
 struct ScheduleRow: CustomStringConvertible {
     let addr: Address
@@ -127,7 +135,7 @@ protocol Instruction: CustomStringConvertible {
     var name: String { get }
     var destReg: String? { get set }
     var readRegs: [String]? { get set }
-    var addr: Int { get }
+    var addr: Int { get set }
     var print: String { get }
 }
 
@@ -284,6 +292,10 @@ struct NoOp: Instruction {
 }
 
 struct MoveInstruction: Instruction {
+    // Dest reg representation of LC/EC
+    static let LC = -1
+    static let EC = -2
+    
     var print: String {
         var arg2: String!
         switch type {
@@ -302,7 +314,7 @@ struct MoveInstruction: Instruction {
     }
     /// -1 for LC, -2 for EC
     var destReg: String? {
-        get { reg == -1 ? "LC" : (reg == -2 ? "EC" : reg.toReg) }
+        get { reg == MoveInstruction.LC ? "LC" : (reg == MoveInstruction.EC ? "EC" : reg.toReg) }
         set { reg = reg == -1 || reg == -2 ? reg : (newValue != nil ? Int(newValue!) ?? newValue!.regToNum : self.reg) }
     }
     var readRegs: [String]? {
@@ -321,7 +333,7 @@ struct MoveInstruction: Instruction {
     var val: Int
 }
 
-enum MoveInstructionType {
+enum MoveInstructionType: Equatable {
     case setPredicateReg
     case setSpecialRegWithImmediate
     case setDestRegWithImmediate

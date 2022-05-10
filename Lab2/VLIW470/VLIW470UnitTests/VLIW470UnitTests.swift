@@ -28,7 +28,7 @@ class VLIW470UnitTests: XCTestCase {
         let depTable = db.createTable(fromProgram: program)
         
         let s = Scheduler(depTable: depTable)
-        let schedule = s.schedule_loop()
+        let schedule = s.schedule_loop().rows
         
         XCTAssertEqual(schedule.count, 4)
         XCTAssertEqual(schedule[0].ALU0, 0) // A
@@ -51,7 +51,7 @@ class VLIW470UnitTests: XCTestCase {
         let depTable = DependencyBuilder().createTable(fromProgram: program)
         
         let s = Scheduler(depTable: depTable)
-        let schedule = s.schedule_loop()
+        let schedule = s.schedule_loop().rows
         
         XCTAssertEqual(schedule.count, 8)
         XCTAssertEqual(schedule[0].ALU0.toChar, "A") // A
@@ -94,7 +94,7 @@ class VLIW470UnitTests: XCTestCase {
         let depTable = db.createTable(fromProgram: program)
         
         let s = Scheduler(depTable: depTable)
-        let schedule = s.schedule_loop()
+        let schedule = s.schedule_loop().rows
         
         XCTAssertEqual(schedule.count, 6)
         XCTAssertEqual(schedule[0].ALU0, 0)
@@ -133,7 +133,7 @@ class VLIW470UnitTests: XCTestCase {
         let schedule = s.schedule_loop()
         
         // TODO: 
-        XCTAssertEqual(schedule.filter { $0.block == 1 }.count, 3)
+        XCTAssertEqual(schedule.rows.filter { $0.block == 1 }.count, 3)
     }
     
     func testSchedulerPip1() throws {
@@ -199,8 +199,27 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(t[8].Mem.instr?.addr.toChar, "K")
         XCTAssertEqual(t[8].Mem.instr?.readRegs?[0].regToNum, 41+0+1)
         XCTAssertEqual(t[8].Mem.instr?.readRegs?[1].regToNum, 32+0+1)
-
-
+    }
+    
+    func testLoopPreparer() throws {
+        let program = try createProgram(fromFile: "handout.json")
+        let db = DependencyBuilder()
+        let depTable = db.createTable(fromProgram: program)
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop_pip()
+        
+        let res = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_r()
+        let loopPreparer = LoopPreparer(schedule: schedule, allocTable: res)
+        let l = loopPreparer.prepare()
+        
+        let mov1 = l.table[2].ALU0.instr as! MoveInstruction
+        XCTAssertEqual(mov1.type, .setPredicateReg)
+        XCTAssertEqual(mov1.reg, 32)
+        XCTAssertEqual(mov1.val, 1) // true
+        let mov2 = l.table[2].ALU1.instr as! MoveInstruction
+        XCTAssertEqual(mov2.type, .setSpecialRegWithImmediate)
+        XCTAssertEqual(mov2.destReg, "EC")
+        XCTAssertEqual(mov2.val, 1)
     }
     
     func testVLIWSimple() throws {

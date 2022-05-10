@@ -36,7 +36,7 @@ struct RegisterAllocator {
     private func allocFreshRegisters_r(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         // id -> prev reg, id -> new reg
-        let assignJump = schedule.compactMap { $0.stage }.max()! + 1 + 1 // first +1 for num stages then +1 for equation
+        let assignJump = schedule.numStages + 1 // num stages then +1 for equation
         let regs = Array(32...95)
         var indexRegToAssignNext = 0
         
@@ -142,7 +142,7 @@ struct RegisterAllocator {
     
     /// Gets the scheduled bundle for addr with PC=addr in given block
     private func bundle(addr: Int, block: Int) -> Int {
-        return schedule.filter({ $0.block == block }).first(where: { r in
+        return schedule.rows.filter({ $0.block == block }).first(where: { r in
             let a = addr
             return r.ALU0 == a || r.ALU1 == a || r.Mult == a || r.Mem == a || r.Branch == a
         })!.addr
@@ -173,7 +173,6 @@ struct RegisterAllocator {
                         }
                         let localDep = deps.localDep.map { Int($0)! }
                         if !localDep.isEmpty {
-//                            let (bundle_addr, oldReg) = producingOldRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
                             assert(localDep.count == 1)
                             let dependentInstr = depTable.first(where: { $0.addr == localDep.first! })!
                             let oldDestReg = dependentInstr.destReg!.regToNum
@@ -227,7 +226,7 @@ struct RegisterAllocator {
                                 let renamedReg = at.renamedRegs.first(where: { $0.oldReg == dependentReg.regToNum })!
                                 oldReadReg = renamedReg.oldReg
                                 let newReg = renamedReg.newReg
-                                let stageOffset = schedule.compactMap { $0.stage }.max()! - stage(bundle: bundle(addr: renamedReg.id, block: 1))
+                                let stageOffset = schedule.rows.compactMap { $0.stage }.max()! - stage(bundle: bundle(addr: renamedReg.id, block: 1))
                                 return newReg + stageOffset
                             }
                             
@@ -268,12 +267,12 @@ struct RegisterAllocator {
     }
     
     private func stage(bundle: Int) -> Int {
-        schedule.first(where: { $0.addr == bundle })!.stage!
+        schedule.rows.first(where: { $0.addr == bundle })!.stage!
     }
     
     private func block(instr: Instruction) -> Int {
         let a = instr.addr
-        return schedule.first(where: { r in
+        return schedule.rows.first(where: { r in
             r.ALU0 == a || r.ALU1 == a || r.Mult == a || r.Mem == a || r.Branch == a
         })!.block
     }
@@ -391,7 +390,7 @@ struct RegisterAllocator {
     
     /// Maps schedule to alloc table, containing the instructions rather than only their original address
     private func createInitialAllocTable(depTable: DependencyTable) -> AllocatedTable {
-        var table: [RegisterAllocRow] = schedule.map {
+        var table: [RegisterAllocRow] = schedule.rows.map {
             func find(_ addr: Int?, _ unit: ExecutionUnit) -> RegisterAllocEntry {
                 if let addr = addr {
                     return .init(execUnit: unit, instr: depTable[addr].instr)
@@ -403,6 +402,7 @@ struct RegisterAllocator {
             return .init(
                 block: $0.block,
                 addr: $0.addr,
+                addrWithStage: $0.addrWithStage,
                 ALU0: find($0.ALU0, .ALU(0)),
                 ALU1: find($0.ALU1, .ALU(1)),
                 Mult: find($0.Mult, .Mult),
@@ -607,7 +607,7 @@ struct RegisterAllocator {
         var at = allocTable
         
         // Insert new bundle
-        var newBundle = RegisterAllocRow(block: 1, addr: currAddr + 1)
+        var newBundle = RegisterAllocRow(block: 1, addr: currAddr + 1, addrWithStage: nil)
         newBundle.Branch = at.table[currAddr].Branch
         at.table.insert(newBundle, at: currAddr + 1)
         

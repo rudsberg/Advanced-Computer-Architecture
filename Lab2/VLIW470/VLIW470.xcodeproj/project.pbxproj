@@ -11,6 +11,8 @@
 		F20807222822BB2000CBBC63 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807212822BB2000CBBC63 /* Scheduler.swift */; };
 		F20807242822BBC500CBBC63 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807232822BBC500CBBC63 /* App.swift */; };
 		F20807262822BCC600CBBC63 /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
+		F23C230D282A40000053DBA8 /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
+		F23C230E282A40000053DBA8 /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
 		F2703EA4282027030016D96C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
 		F2703EAB282027300016D96C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
 		F2703EAD282028120016D96C /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
@@ -41,6 +43,7 @@
 		F20807212822BB2000CBBC63 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
 		F20807232822BBC500CBBC63 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		F20807252822BCC600CBBC63 /* DependencyBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyBuilder.swift; sourceTree = "<group>"; };
+		F23C230C282A40000053DBA8 /* LoopPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopPreparer.swift; sourceTree = "<group>"; };
 		F2703EA0282027030016D96C /* VLIW470 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = VLIW470; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2703EA3282027030016D96C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		F2703EAA282027300016D96C /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
@@ -107,6 +110,7 @@
 				F20807232822BBC500CBBC63 /* App.swift */,
 				F20807252822BCC600CBBC63 /* DependencyBuilder.swift */,
 				F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */,
+				F23C230C282A40000053DBA8 /* LoopPreparer.swift */,
 			);
 			path = VLIW470;
 			sourceTree = "<group>";
@@ -230,6 +234,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F23C230D282A40000053DBA8 /* LoopPreparer.swift in Sources */,
 				F2703EAD282028120016D96C /* Model.swift in Sources */,
 				F20807222822BB2000CBBC63 /* Scheduler.swift in Sources */,
 				F20807262822BCC600CBBC63 /* DependencyBuilder.swift in Sources */,
@@ -249,6 +254,7 @@
 				F294D8E92823AE1400916BFD /* Scheduler.swift in Sources */,
 				F294D8E52823AC8F00916BFD /* main.swift in Sources */,
 				F294D8E62823AC8F00916BFD /* DependencyBuilder.swift in Sources */,
+				F23C230E282A40000053DBA8 /* LoopPreparer.swift in Sources */,
 				F294D8E42823AC8F00916BFD /* App.swift in Sources */,
 				F294D8E32823AC8F00916BFD /* Helpers.swift in Sources */,
 				F294D8E22823AC3800916BFD /* Model.swift in Sources */,
