@@ -479,27 +479,28 @@ struct RegisterAllocator {
         var at = allocTable
         allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
-                if let instr = entry.instr, let readRegs = instr.readRegs, !readRegs.isEmpty  {
+                if let instr = entry.instr, let readRegs = instr.readRegs, !readRegs.isEmpty {
                     // Rename each read register
                     // Find what readReg was renamed to
                     // readRegs are pointing to the OLD regs, check renamed regs for those that have match
-                    // and return the old regs
                     let block = depTable.first(where: { $0.addr == instr.addr })!.block
-                    let newRegs = readRegs.map { oldRegToNewFreshReg(oldReg: $0, block: block, allocTable: allocTable) }
+                    let newRegs = readRegs.compactMap { oldRegToNewFreshReg(oldReg: $0, block: block, allocTable: allocTable) }
                     
-                    switch entry.execUnit {
-                    case .ALU(let i):
-                        if i == 0 {
-                            at.table[bIndex].ALU0.instr?.readRegs = newRegs
-                        } else {
-                            at.table[bIndex].ALU1.instr?.readRegs = newRegs
+                    if !newRegs.isEmpty {
+                        switch entry.execUnit {
+                        case .ALU(let i):
+                            if i == 0 {
+                                at.table[bIndex].ALU0.instr?.readRegs = newRegs
+                            } else {
+                                at.table[bIndex].ALU1.instr?.readRegs = newRegs
+                            }
+                        case .Mult:
+                            at.table[bIndex].Mult.instr?.readRegs = newRegs
+                        case .Mem:
+                            at.table[bIndex].Mem.instr?.readRegs = newRegs
+                        case .Branch:
+                            at.table[bIndex].Branch.instr?.readRegs = newRegs
                         }
-                    case .Mult:
-                        at.table[bIndex].Mult.instr?.readRegs = newRegs
-                    case .Mem:
-                        at.table[bIndex].Mem.instr?.readRegs = newRegs
-                    case .Branch:
-                        at.table[bIndex].Branch.instr?.readRegs = newRegs
                     }
                 }
             }
@@ -507,11 +508,15 @@ struct RegisterAllocator {
         return at
     }
     
-    private func oldRegToNewFreshReg(oldReg: String, block: Int, allocTable: AllocatedTable) -> String {
+    private func oldRegToNewFreshReg(oldReg: String, block: Int, allocTable: AllocatedTable) -> String? {
         // If two match then return the one in bb0
         let newRegs = allocTable.renamedRegs
             .filter { oldReg.regToNum == $0.oldReg }
             .map { ($0.block, $0.newReg.toReg) }
+        
+        if newRegs.isEmpty {
+            return nil
+        }
         
         if newRegs.count == 2 {
             if block == 1 {
