@@ -133,29 +133,23 @@ class VLIW470UnitTests: XCTestCase {
         let s = Scheduler(depTable: depTable)
         let schedule = s.schedule_loop()
         
-        // TODO: 
+//        let res = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_b()
+//        let t = res.table
+        
+        XCTAssertEqual(schedule.rows.count, 1+3+1)
+        
         XCTAssertEqual(schedule.rows.filter { $0.block == 1 }.count, 3)
-    }
-    
-    func testSchedulerPip1() throws {
-        let program = try createProgram(fromFile: "handout.json")
-        let db = DependencyBuilder()
-        let depTable = db.createTable(fromProgram: program)
+        XCTAssertEqual(schedule.rows[1].Mult, 1)
+        XCTAssertEqual(schedule.rows[1].Branch, nil)
         
-        let s = Scheduler(depTable: depTable)
-        let schedule = s.schedule_loop_pip()
-    }
-    
-    func testAlloc_b() throws {
-        let program = try createProgram(fromFile: "handout.json")
-        let db = DependencyBuilder()
-        let depTable = db.createTable(fromProgram: program)
-        let s = Scheduler(depTable: depTable)
-        let schedule = s.schedule_loop()
+        XCTAssertEqual(schedule.rows[2].Mult, nil)
+        XCTAssertEqual(schedule.rows[2].Branch, nil)
         
-        let res = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_b()
-        let t = res.table
+        XCTAssertEqual(schedule.rows[3].Mult, nil)
+        XCTAssertNotNil(schedule.rows[3].Branch)
         
+//        let loop = t[3].Branch.instr as! LoopInstruction
+//        XCTAssertEqual(loop.loopStart, 1)
     }
     
     func testAlloc_r() throws {

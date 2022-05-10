@@ -307,7 +307,7 @@ struct Scheduler {
             schedule.rows.insert(newBundle, at: newLoopIndex)
             
             // Remove the branch instruction from old position
-            schedule.rows[oldLoopIndex].Mem = nil
+            schedule.rows[oldLoopIndex].Branch = nil
             
             // Update II
             schedule.II = validII
@@ -360,9 +360,6 @@ struct Scheduler {
     }
     
     private func equationHolds(for entries: [(Address, ExecutionUnit)], II: Int) -> Bool {
-        // Filter out those with interloop dependencies
-        guard entries.count > 1 else { return true }
-        
         func S(_ entry: (Address, ExecutionUnit)) -> Int {
             entry.0
         }
@@ -371,12 +368,18 @@ struct Scheduler {
             entry.1 == .Mult ? 3 : 1
         }
         
-        return combos(elements: entries, k: 2).allSatisfy { combo in
+        let twoCombosSatisfied = combos(elements: entries, k: 2).allSatisfy { combo in
             guard combo.count > 1 else { return true }
             // S(P) + λ(P) ≤ S(C) + II
             let P = combo[0]
             let C = combo[1]
             return S(P) + λ(P) <= S(C) + II
         }
+        let singleInstructionsSatisified = entries.allSatisfy { entry in
+            let P = entry
+            let C = entry
+            return S(P) + λ(P) <= S(C) + II
+        }
+        return twoCombosSatisfied && singleInstructionsSatisified
     }
 }
