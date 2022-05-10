@@ -20,7 +20,10 @@ struct LoopPreparer {
         at = prepareLoopBody(at)
         
         print("\n======= Prepared loop =======")
-        at.table.forEach { print($0) }
+        at.table.forEach {
+            let x = $0
+            print("\(x.addr) | ALU0=\(x.ALU0.instr), ALU1=\(x.ALU1.instr), Mult=\(x.Mult.instr), Mem=\(x.Mem.instr), Branch=\(x.Branch.instr)")
+        }
         
         return at
     }
@@ -75,6 +78,9 @@ struct LoopPreparer {
                 instrToAdd[i].addr = newAddr
             }
             
+            // Update addr
+            at = updateAddrToBeSequential(at)
+            
             // Add instructions
             let (newRow2, remainingInstructions2) = add(instrToAdd, toRow: at.table[newAddr])
             at.table[newAddr] = newRow2
@@ -84,23 +90,34 @@ struct LoopPreparer {
         }
     }
     
+    private func updateAddrToBeSequential(_ allocTable: AllocatedTable) -> AllocatedTable {
+        var at = allocTable
+        at.table.enumerated().forEach { (i, row) in
+            at.table[i].addr = i
+        }
+        return at
+    }
+    
     private func prepareLoopBody(_ allocTable: AllocatedTable) -> AllocatedTable {
         var at = allocTable
         
-        // Drop loop body and bb2 to get only bb1, save bb2 before
+        // Drop loop body and bb2 to get only bb1
         at.table = allocTable.table.filter { $0.block == 0 }
         
         // Create empty loop body
-        let addrStartLoop = allocTable.table.first(where: { $0.block == 1 })!.addr
-        for i in 0...schedule.II-1 {
-            at.table.append(.init(block: 1, addr: addrStartLoop + i, addrWithStage: nil))
+        let addrBeforeLoop = allocTable.table.last(where: { $0.block == 0 })!.addr
+        for i in 1...schedule.II {
+            at.table.append(.init(block: 1, addr: addrBeforeLoop + i, addrWithStage: nil))
         }
         
         // From start address of loop (start_addr), iterate II times and insert each instruction at start_addr+stage_addr at same exec unit it was scheduled on
-        for stage in 0...schedule.II-1 {
+        let startI = self.allocTable.table.first(where: { $0.block == 1 })!.addrWithStage!
+        var insertIndex = addrBeforeLoop + 1
+        for stage in startI...startI+schedule.II {
             // For each row in this stage, assign instruction
-            allocTable.table.filter { $0.addrWithStage == stage }.forEach { row in
-                let i = addrStartLoop + stage
+            let rowSameStage = self.allocTable.table.filter { $0.addrWithStage == stage }
+            rowSameStage.forEach { row in
+                let i = insertIndex
                 if let instr = row.ALU0.instr {
                     at.table[i].ALU0.instr = instr
                 }
@@ -117,10 +134,13 @@ struct LoopPreparer {
                     at.table[i].Branch.instr = instr
                 }
             }
+            insertIndex += 1
         }
         
         // Append bb2 again
         at.table.append(contentsOf: allocTable.table.filter { $0.block == 2 })
+        
+        at = updateAddrToBeSequential(at)
         
         return at
     }
