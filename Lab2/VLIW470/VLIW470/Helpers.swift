@@ -199,3 +199,11 @@ func combos<T>(elements: ArraySlice<T>, k: Int) -> [[T]] {
 func combos<T>(elements: Array<T>, k: Int) -> [[T]] {
     return combos(elements: ArraySlice(elements), k: k)
 }
+
+extension Array {
+    func chunked(by chunkSize: Int) -> [[Element]] {
+        return stride(from: 0, to: self.count, by: chunkSize).map {
+            Array(self[$0..<Swift.min($0 + chunkSize, self.count)])
+        }
+    }
+}

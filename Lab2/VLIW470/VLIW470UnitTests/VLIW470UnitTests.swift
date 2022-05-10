@@ -225,13 +225,19 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(mov2.val, 1)
         
         XCTAssertEqual(l.table[3].ALU0.instr?.addr.toChar, "I")
+        XCTAssertEqual(l.table[3].ALU0.instr?.predicate, 32)
         XCTAssertEqual(l.table[3].Mem.instr?.addr.toChar, "E")
+        XCTAssertEqual(l.table[3].Mem.instr?.predicate, 32)
 
         XCTAssertEqual(l.table[4].Mult.instr?.addr.toChar, "F")
+        XCTAssertEqual(l.table[4].Mult.instr?.predicate, 32)
         XCTAssertEqual(l.table[4].Mem.instr?.addr.toChar, "H")
+        XCTAssertEqual(l.table[4].Mem.instr?.predicate, 33)
 
         XCTAssertEqual(l.table[5].Mult.instr?.addr.toChar, "G")
+        XCTAssertEqual(l.table[5].Mult.instr?.predicate, 32)
         XCTAssertEqual(l.table[5].Branch.instr?.addr.toChar, "J")
+        XCTAssertEqual(l.table[3].Branch.instr?.predicate, nil)
         
         XCTAssertEqual(l.table[6].Mem.instr?.addr.toChar, "K")
     }

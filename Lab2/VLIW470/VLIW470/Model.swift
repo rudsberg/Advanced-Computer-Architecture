@@ -38,6 +38,12 @@ struct RegisterAllocRow {
     var Branch = RegisterAllocEntry(execUnit: .Branch)
 }
 
+extension RegisterAllocRow {
+    var execEntries: [RegisterAllocEntry] {
+        [ALU0, ALU1, Mult, Mem, Branch]
+    }
+}
+
 struct RegisterAllocEntry {
     let execUnit: ExecutionUnit
     var instr: Instruction? = nil
@@ -137,6 +143,7 @@ protocol Instruction: CustomStringConvertible {
     var readRegs: [String]? { get set }
     var addr: Int { get set }
     var print: String { get }
+    var predicate: Int? { get set }
 }
 
 extension Instruction {
@@ -153,6 +160,7 @@ extension Optional where Wrapped == Instruction {
 }
 
 struct ArithmeticInstruction: Instruction {
+    var predicate: Int? = nil
     var print: String {
         "\(mnemonic.rawValue) \(dest.toReg), \(opA.toReg), \(mnemonic == .addi ? "\(opB)" : opB.toReg)"
     }
@@ -199,6 +207,7 @@ enum ArithmeticInstructionType: String {
 }
 
 struct MemoryInstruction: Instruction {
+    var predicate: Int? = nil
     var print: String {
         "\(mnemonic.rawValue) \(destOrSource.toReg), \(imm)(\(loadStoreAddr.toReg))"
     }
@@ -248,6 +257,7 @@ enum MemoryInstructionType: String {
 }
 
 struct LoopInstruction: Instruction {
+    var predicate: Int? = nil
     var print: String {
         "\(type.rawValue) \(loopStart)"
     }
@@ -274,6 +284,7 @@ enum LoopInstructionType: String {
 }
 
 struct NoOp: Instruction {
+    var predicate: Int? = nil
     var print: String {
         name
     }
@@ -292,6 +303,7 @@ struct NoOp: Instruction {
 }
 
 struct MoveInstruction: Instruction {
+    var predicate: Int? = nil
     // Dest reg representation of LC/EC
     static let LC = -1
     static let EC = -2

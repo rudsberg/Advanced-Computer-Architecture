@@ -110,6 +110,21 @@ struct LoopPreparer {
             at.table.append(.init(block: 1, addr: addrBeforeLoop + i, addrWithStage: nil))
         }
         
+        // Map instruction addr to predicate
+        let predicates = Array(32...95)
+        var addrToPredicate = [Int: Int]()
+        self.allocTable.table.filter { $0.block == 1 }.chunked(by: schedule.II).enumerated().forEach { (i, chunk) in
+            func setPred(_ instr: Instruction?) {
+                if let instr = instr {
+                    addrToPredicate[instr.addr] = predicates[i]
+                }
+            }
+            
+            Array(chunk).forEach { row in
+                row.execEntries.forEach { setPred($0.instr) }
+            }
+        }
+        
         // From start address of loop (start_addr), iterate II times and insert each instruction at start_addr+stage_addr at same exec unit it was scheduled on
         let startI = self.allocTable.table.first(where: { $0.block == 1 })!.addrWithStage!
         var insertIndex = addrBeforeLoop + 1
@@ -118,16 +133,20 @@ struct LoopPreparer {
             let rowSameStage = self.allocTable.table.filter { $0.addrWithStage == stage }
             rowSameStage.forEach { row in
                 let i = insertIndex
-                if let instr = row.ALU0.instr {
+                if var instr = row.ALU0.instr {
+                    instr.predicate = addrToPredicate[instr.addr]
                     at.table[i].ALU0.instr = instr
                 }
-                if let instr = row.ALU1.instr {
+                if var instr = row.ALU1.instr {
+                    instr.predicate = addrToPredicate[instr.addr]
                     at.table[i].ALU1.instr = instr
                 }
-                if let instr = row.Mult.instr {
+                if var instr = row.Mult.instr {
+                    instr.predicate = addrToPredicate[instr.addr]
                     at.table[i].Mult.instr = instr
                 }
-                if let instr = row.Mem.instr {
+                if var instr = row.Mem.instr {
+                    instr.predicate = addrToPredicate[instr.addr]
                     at.table[i].Mem.instr = instr
                 }
                 if let instr = row.Branch.instr {
