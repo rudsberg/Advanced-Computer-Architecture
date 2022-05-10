@@ -153,13 +153,10 @@ struct RegisterAllocator {
         var regCounter = nextFreshReg
         
         allocTable.table.enumerated().forEach { (bIndex, b) in
-            // TODO: If an instruction has a local dependency within BB0 or BB2, register allocation works in the same way as register allocation without loop.pip (unless the destination register has already been allocated in Phase 1).
-            
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 if let instr = entry.instr {
                     let deps = depTable.first(where: { $0.addr == instr.addr })!
                     
-                    // Instructions in BB0/BB2 that
                     
                     if let readRegs = instr.readRegs, !readRegs.isEmpty, at.table[bIndex].block == 1 {
                         // For loop invariant dependencies, the register assigned in phase two is read and assigned to the corresponding operand
@@ -171,11 +168,17 @@ struct RegisterAllocator {
                         
                         // For local loop dependencies, the consumed register name needs to be corrected by the number of times RRB changed since the producer wrote to that register.
                         // x_D = x_S + (St(D) − St(S))
+                        if instr.addr.toChar == "H" {
+                            
+                        }
                         let localDep = deps.localDep.map { Int($0)! }
                         if !localDep.isEmpty {
-                            let (bundle_addr, oldReg) = producingOldRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
-                            let x_s = at.renamedRegs.first(where: { $0.oldReg == oldReg.regToNum })!.newReg
-                            let St_S = stage(bundle: bundle_addr)
+//                            let (bundle_addr, oldReg) = producingOldRegFromDep(deps: { $0.localDep }, inBlock: 1).first!
+                            assert(localDep.count == 1)
+                            let dependentInstr = depTable.first(where: { $0.addr == localDep.first! })!
+                            let oldDestReg = dependentInstr.destReg!.regToNum
+                            let x_s = at.renamedRegs.first(where: { $0.oldReg == oldDestReg })!.newReg
+                            let St_S = stage(bundle: bundle(addr: dependentInstr.addr, block: 1))
                             let St_d = stage(bundle: bundle(addr: instr.addr, block: 1))
                             assert(St_d - St_S >= 0)
                             let x_D = x_s + (St_d - St_S)
@@ -238,7 +241,26 @@ struct RegisterAllocator {
                         }
                     }
                     
-                    // TODO: If an instruction in BB0 or BB2 reads a loop invariant it is simply assigned to the corresponding operand.
+                    // If an instruction in BB0 or BB2 reads a loop invariant it is simply assigned to the corresponding operand.
+                    // Thus, for each loop invariant set it to newly renamed register
+                    if at.table[bIndex].block == 0 || at.table[bIndex].block == 2  {
+                        let loopInvDep = deps.loopInvariantDep.map { Int($0)! }
+                        if !loopInvDep.isEmpty {
+                            let renamed = at.nonRotatingRenamedRegs.first(where: { loopInvDep.contains($0.id) })!
+                            at = assignReadReg(renamed.newReg, oldReadReg: renamed.oldReg, in: at, toEntry: entry, atIndex: bIndex)
+                        }
+                    }
+                    
+                    // If an instruction has a local dependency within BB0 or BB2, register allocation works in the same way as register allocation without loop.pip
+                    // (unless the destination register has already been allocated in Phase 1).
+                    if at.table[bIndex].block == 0 || at.table[bIndex].block == 2, !deps.localDep.isEmpty {
+                        // TODO: assumes can only have one?!
+                        let localDep = deps.localDep.map { Int($0)! }.first!
+                        let dependentReg = depTable.first(where: { $0.addr == localDep })!.destReg!
+                        if at.renamedRegs.contains(where: { $0.oldReg == localDep }) {
+                            
+                        }
+                    }
                 }
             }
         }
@@ -493,12 +515,8 @@ struct RegisterAllocator {
         
         if newRegs.count == 2 {
             if block == 1 {
-                // TODO: what's the intention to do here???
-                //
-                // return the one from bb0
                 return newRegs.first(where: { $0.0 == 0 })!.1
             } else {
-                // return the one from bb1
                 return newRegs.first(where: { $0.0 == 1 })!.1
             }
         } else {
