@@ -480,11 +480,24 @@ struct RegisterAllocator {
         allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
                 if let instr = entry.instr, let readRegs = instr.readRegs, !readRegs.isEmpty {
-                    // Rename each read register
-                    // Find what readReg was renamed to
-                    // readRegs are pointing to the OLD regs, check renamed regs for those that have match
+                    // Assumption: all readRegs only reference regs that have been written a value to
+                    // those all have a producer, thus all needs to be resolved
+                    let regsToResolve = readRegs
                     let block = depTable.first(where: { $0.addr == instr.addr })!.block
-                    let newRegs = readRegs.compactMap { oldRegToNewFreshReg(oldReg: $0, block: block, allocTable: allocTable) }
+                    let newRegs = regsToResolve.map { reg -> String in
+                        let res = allocTable.renamedRegs.filter({ $0.oldReg == reg.regToNum && $0.block <= block })
+                        if res.count > 1 {
+                            if block == 0 || block == 1 {
+                                return res.first(where: { $0.block == 0 })!.newReg.toReg
+                            } else {
+                                // For block 2, take the one with highest block
+                                // According to specification this shouldn't happen
+                                return res.sorted(by: { $0.block > $1.block }).first!.newReg.toReg
+                            }
+                        } else {
+                            return res.first!.newReg.toReg
+                        }
+                    }
                     
                     if !newRegs.isEmpty {
                         switch entry.execUnit {
@@ -506,27 +519,6 @@ struct RegisterAllocator {
             }
         }
         return at
-    }
-    
-    private func oldRegToNewFreshReg(oldReg: String, block: Int, allocTable: AllocatedTable) -> String? {
-        // If two match then return the one in bb0
-        let newRegs = allocTable.renamedRegs
-            .filter { oldReg.regToNum == $0.oldReg }
-            .map { ($0.block, $0.newReg.toReg) }
-        
-        if newRegs.isEmpty {
-            return nil
-        }
-        
-        if newRegs.count == 2 {
-            if block == 1 {
-                return newRegs.first(where: { $0.0 == 0 })!.1
-            } else {
-                return newRegs.first(where: { $0.0 == 1 })!.1
-            }
-        } else {
-            return newRegs[0].1
-        }
     }
     
     /// View - see loop body as a function and interloop dependencies as function parameters.

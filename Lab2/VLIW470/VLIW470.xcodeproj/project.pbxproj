@@ -13,6 +13,7 @@
 		F20807262822BCC600CBBC63 /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
 		F23C230D282A40000053DBA8 /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
 		F23C230E282A40000053DBA8 /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
+		F25C5E95282BD13D0072C13A /* test_2.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5E94282BD13D0072C13A /* test_2.json */; };
 		F2703EA4282027030016D96C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
 		F2703EAB282027300016D96C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
 		F2703EAD282028120016D96C /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
@@ -44,6 +45,7 @@
 		F20807232822BBC500CBBC63 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		F20807252822BCC600CBBC63 /* DependencyBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyBuilder.swift; sourceTree = "<group>"; };
 		F23C230C282A40000053DBA8 /* LoopPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopPreparer.swift; sourceTree = "<group>"; };
+		F25C5E94282BD13D0072C13A /* test_2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = test_2.json; sourceTree = "<group>"; };
 		F2703EA0282027030016D96C /* VLIW470 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = VLIW470; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2703EA3282027030016D96C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		F2703EAA282027300016D96C /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 				F294D8EA2823AEBE00916BFD /* test.json */,
 				F294D8EB2823B35A00916BFD /* test2.json */,
 				F2FF9DC12825742D0036C13E /* test3.json */,
+				F25C5E94282BD13D0072C13A /* test_2.json */,
 			);
 			path = resources;
 			sourceTree = "<group>";
@@ -224,6 +227,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F25C5E95282BD13D0072C13A /* test_2.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

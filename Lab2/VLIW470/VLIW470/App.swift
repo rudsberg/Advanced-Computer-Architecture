@@ -13,10 +13,16 @@ struct Config {
     let outputFilePip: String
 }
 
+struct Result {
+    let simpleSchedule: Schedule
+    let pipSchedule: Schedule
+}
+
 struct App {
     let config: Config
     
-    func run() throws {
+    @discardableResult
+    func run() throws -> Result {
         // Parse program
         let program = try Parser().parseInstructions(fromFile: config.programFile)
 
@@ -39,5 +45,7 @@ struct App {
         let logger = Logger()
         try logger.log(allocTable: allocatedTableSimple, documentName: config.outputFileSimple)
         try logger.log(allocTable: allocatedTablePip, documentName: config.outputFilePip)
+        
+        return .init(simpleSchedule: scheduleSimple, pipSchedule: schedulePip)
     }
 }
