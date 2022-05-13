@@ -168,9 +168,6 @@ struct RegisterAllocator {
                         
                         // For local loop dependencies, the consumed register name needs to be corrected by the number of times RRB changed since the producer wrote to that register.
                         // x_D = x_S + (St(D) − St(S))
-                        if instr.addr.toChar == "H" {
-                            
-                        }
                         let localDep = deps.localDep.map { Int($0)! }
                         if !localDep.isEmpty {
                             assert(localDep.count == 1)
@@ -196,16 +193,21 @@ struct RegisterAllocator {
                             let x_s = at.renamedRegs.first(where: { $0.oldReg == oldDestReg.regToNum })!.newReg
                             let St_S = stage(bundle: bundle(addr: interloopDepAddr, block: 1))
                             let St_d = stage(bundle: bundle(addr: instr.addr, block: 1))
-                            assert(St_d - St_S >= 0)
+//                            assert(St_d - St_S >= 0)
                             let x_D = x_s + (St_d - St_S) + 1
                             let oldReadReg = at.renamedRegs.first(where: { $0.oldReg == depTable.first(where: { d in d.addr == interloopDepAddr })!.destReg!.regToNum })!.oldReg
                             at = assignReadReg(x_D, oldReadReg: oldReadReg, in: at, toEntry: entry, atIndex: bIndex)
                         }
                     }
                     
-                    // If an instruction in BB0 is writing to a register r such that r is in the interloop dependency of any instruction of the loop body, the iteration offset is set to 1, the stage offset is set to 0, and the destination register is the same as the producer within the loop.
+                    // If an instruction in BB0 is writing to a register r such that r is an interloop dependent operand of any instruction C of the loop body, and instruction P produces that operand within the loop body, then the stage offset is set to − St(P), the iteration offset is set to 1, and the destination register is the same as the destination register of P.
                     if let destReg = instr.destReg, at.table[bIndex].block == 0 {
-                        if depTable.first(where: { $0.interloopDep.map{ $0.regToNum }.contains(instr.addr) }) != nil {
+                        // Check if loop instruction is interloop dependent on this instruction
+                        let interloopDeps = depTable.map { $0.interloopDep.map { $0.regToNum } }.flatMap { $0 }
+                        let dependentInstr = interloopDeps.map { depAddr in depTable.first(where: { $0.addr == depAddr })! }
+                        let producingRegs = dependentInstr.map { $0.destReg! }
+                        
+                        if producingRegs.contains(destReg) {
                             // Means there exist an instruction depedent on this destReg
                             // Find this instruction newDestReg and add 1 for offset
                             let newDestReg = at.renamedRegs.first(where: { $0.oldReg == destReg.regToNum })!.newReg + 1
@@ -532,13 +534,12 @@ struct RegisterAllocator {
         
         var oldOverwrittenRegs = depTable
         // If in block 1 and has two interloop dep, then it is of interest
-            .filter { $0.block == 1 && $0.interloopDep.count == 2 }
+            .filter { $0.block == 1 && !$0.interloopDep.isEmpty }
         // Map it to a reg
-            .map { loopInstr -> String in
-                // The lower of the two deps is the one in bb0
-                let addr = max(loopInstr.interloopDep[0].regToNum, loopInstr.interloopDep[1].regToNum)
-                return depTable[addr].destReg!
+            .map { loopInstr -> [String] in
+                return loopInstr.interloopDep.map { depTable[$0.regToNum].destReg! }
             }
+            .flatMap { $0 }
         // Remove duplicates
         oldOverwrittenRegs = oldOverwrittenRegs.uniqued()
         

@@ -1,6 +1,7 @@
 [
 "mov x1, 10",
+"mov x2, 11",
 "mulu x2, x1, x2",
-"loop 1",
-"addi x3, x4, 1"
+"loop 2",
+"addi x3, x1, 1"
 ]

@@ -180,9 +180,6 @@ struct Scheduler {
     }
     
     private func addToSchedule(_ entry: DependencyTableEntry, in schedule: Schedule) -> Schedule {
-        if entry.instr.addr.toChar == "G" {
-            
-        }
         var schedule = schedule
         let stage = earliestScheduledBundle(for: entry, in: schedule)
         let (s, _) = addToSchedule(entry, atEarliest: stage, in: schedule)

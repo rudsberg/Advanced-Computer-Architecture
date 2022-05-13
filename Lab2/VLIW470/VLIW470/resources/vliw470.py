@@ -19,7 +19,7 @@ parser.add_argument(
 
 arg = parser.parse_args()
 
-instructionMemory: list[list[str]] = json.load(arg.instructions)
+instructionMemory = json.load(arg.instructions)
 
 class DataMemory:
     data = {}

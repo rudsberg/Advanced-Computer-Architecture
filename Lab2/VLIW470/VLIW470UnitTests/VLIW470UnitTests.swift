@@ -114,42 +114,43 @@ class VLIW470UnitTests: XCTestCase {
         XCTAssertEqual(schedule[5].Mem, 5)
     }
     
-//    func testScheduler4() throws {
-//        /*
-//         [
-//         "mov x1, 10",
-//         "mulu x2, x1, x2",
-//         "loop 1",
-//         "addi x3, x4, 1"
-//         ]
-//         */
-//        // Should create a loop of size 3 due to the interloop dep
-//
-//        let program = try createProgram(fromFile: "test3.json")
-//        let db = DependencyBuilder()
-//        let depTable = db.createTable(fromProgram: program)
-//
-//        let s = Scheduler(depTable: depTable)
-//        let schedule = s.schedule_loop()
-//
-//        let res = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_b()
-//        let t = res.table
-//
-//        XCTAssertEqual(schedule.rows.count, 1+3+1)
-//
-//        XCTAssertEqual(schedule.rows.filter { $0.block == 1 }.count, 3)
-//        XCTAssertEqual(schedule.rows[1].Mult, 1)
-//        XCTAssertEqual(schedule.rows[1].Branch, nil)
-//
-//        XCTAssertEqual(schedule.rows[2].Mult, nil)
-//        XCTAssertEqual(schedule.rows[2].Branch, nil)
-//
-//        XCTAssertEqual(schedule.rows[3].Mult, nil)
-//        XCTAssertNotNil(schedule.rows[3].Branch)
-//
+    func testScheduler4() throws {
+        /*
+         [
+         "mov x1, 10",
+         "mov x2, 11",
+         "mulu x2, x1, x2",
+         "loop 2",
+         "addi x3, x1, 1"
+         ]
+         */
+        // Should create a loop of size 3 due to the interloop dep
+
+        let program = try createProgram(fromFile: "test3.json")
+        let db = DependencyBuilder()
+        let depTable = db.createTable(fromProgram: program)
+
+        let s = Scheduler(depTable: depTable)
+        let schedule = s.schedule_loop()
+
+        let res = RegisterAllocator(depTable: depTable, schedule: schedule).alloc_b()
+        let t = res.table
+
+        XCTAssertEqual(schedule.rows.count, 1+3+1)
+
+        XCTAssertEqual(schedule.rows.filter { $0.block == 1 }.count, 3)
+        XCTAssertEqual(schedule.rows[1].Mult, 2)
+        XCTAssertEqual(schedule.rows[1].Branch, nil)
+
+        XCTAssertEqual(schedule.rows[2].Mult, nil)
+        XCTAssertEqual(schedule.rows[2].Branch, nil)
+
+        XCTAssertEqual(schedule.rows[3].Mult, nil)
+        XCTAssertNotNil(schedule.rows[3].Branch)
+
 //        let loop = t[3].Branch.instr as! LoopInstruction
 //        XCTAssertEqual(loop.loopStart, 1)
-//    }
+    }
     
     func testAlloc_r() throws {
         let program = try createProgram(fromFile: "handout.json")

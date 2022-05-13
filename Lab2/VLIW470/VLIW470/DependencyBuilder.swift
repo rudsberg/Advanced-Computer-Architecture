@@ -49,7 +49,7 @@ struct DependencyBuilder {
             // An operand of instruction A has an interloop dependency if it is either produced within the loop body,
             // after A in sequential program order, or before the loop, in BB0 (or both).
             // Thus: take instructions after i and in bb0
-            var consideredInterLoopInstructions = bb1.dropFirst(i.addr - loopStart).producingInstructions + bb0.producingInstructions
+            var consideredInterLoopInstructions = bb0.producingInstructions + bb1.dropFirst(i.addr - loopStart).producingInstructions
             consideredInterLoopInstructions = consideredInterLoopInstructions.filter { i in !consideredLoopInvInstructions.contains(where: { $0.addr == i.addr }) }
             let entry = DependencyTableEntry(
                 block: 1,
@@ -88,13 +88,18 @@ struct DependencyBuilder {
     
     /// Finds dependencies
     private func findDependencies(in instructions: Program, for instruction: Instruction) -> [String] {
-        let RAW = instructions.filter {
-            guard let readRegs = instruction.readRegs, let destReg = $0.destReg else {
+        guard let readRegs = instruction.readRegs else {
+            return []
+        }
+        
+        var RAW = instructions.filter {
+            guard let destReg = $0.destReg else {
                 return false
             }
             return readRegs.contains(destReg)
-        }
-        return RAW.map { "\($0.addr)" }
+        }.map { $0.addr }
+        RAW = RAW.uniqued()
+        return RAW.map { "\($0)" }
     }
 
 }

@@ -14,6 +14,17 @@
 		F23C230D282A40000053DBA8 /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
 		F23C230E282A40000053DBA8 /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
 		F25C5E95282BD13D0072C13A /* test_2.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5E94282BD13D0072C13A /* test_2.json */; };
+		F25C5EA6282BECF90072C13A /* test-5.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EA1282BECF90072C13A /* test-5.json */; };
+		F25C5EA7282BECF90072C13A /* test-6.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EA2282BECF90072C13A /* test-6.json */; };
+		F25C5EA8282BECF90072C13A /* test-2.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EA3282BECF90072C13A /* test-2.json */; };
+		F25C5EA9282BECF90072C13A /* test-4.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EA4282BECF90072C13A /* test-4.json */; };
+		F25C5EAA282BECF90072C13A /* test-3.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EA5282BECF90072C13A /* test-3.json */; };
+		F25C5EB1282BED040072C13A /* mem6.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EAB282BED040072C13A /* mem6.json */; };
+		F25C5EB2282BED040072C13A /* mem1.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EAC282BED040072C13A /* mem1.json */; };
+		F25C5EB3282BED040072C13A /* mem2.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EAD282BED040072C13A /* mem2.json */; };
+		F25C5EB4282BED040072C13A /* mem3.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EAE282BED040072C13A /* mem3.json */; };
+		F25C5EB5282BED040072C13A /* mem5.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EAF282BED040072C13A /* mem5.json */; };
+		F25C5EB6282BED040072C13A /* mem4.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EB0282BED040072C13A /* mem4.json */; };
 		F2703EA4282027030016D96C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
 		F2703EAB282027300016D96C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
 		F2703EAD282028120016D96C /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
@@ -46,6 +57,17 @@
 		F20807252822BCC600CBBC63 /* DependencyBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyBuilder.swift; sourceTree = "<group>"; };
 		F23C230C282A40000053DBA8 /* LoopPreparer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopPreparer.swift; sourceTree = "<group>"; };
 		F25C5E94282BD13D0072C13A /* test_2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = test_2.json; sourceTree = "<group>"; };
+		F25C5EA1282BECF90072C13A /* test-5.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "test-5.json"; sourceTree = "<group>"; };
+		F25C5EA2282BECF90072C13A /* test-6.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "test-6.json"; sourceTree = "<group>"; };
+		F25C5EA3282BECF90072C13A /* test-2.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "test-2.json"; sourceTree = "<group>"; };
+		F25C5EA4282BECF90072C13A /* test-4.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "test-4.json"; sourceTree = "<group>"; };
+		F25C5EA5282BECF90072C13A /* test-3.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "test-3.json"; sourceTree = "<group>"; };
+		F25C5EAB282BED040072C13A /* mem6.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = mem6.json; path = ../../../../../../../../Downloads/mem6.json; sourceTree = "<group>"; };
+		F25C5EAC282BED040072C13A /* mem1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = mem1.json; path = ../../../../../../../../Downloads/mem1.json; sourceTree = "<group>"; };
+		F25C5EAD282BED040072C13A /* mem2.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = mem2.json; path = ../../../../../../../../Downloads/mem2.json; sourceTree = "<group>"; };
+		F25C5EAE282BED040072C13A /* mem3.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = mem3.json; path = ../../../../../../../../Downloads/mem3.json; sourceTree = "<group>"; };
+		F25C5EAF282BED040072C13A /* mem5.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = mem5.json; path = ../../../../../../../../Downloads/mem5.json; sourceTree = "<group>"; };
+		F25C5EB0282BED040072C13A /* mem4.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = mem4.json; path = ../../../../../../../../Downloads/mem4.json; sourceTree = "<group>"; };
 		F2703EA0282027030016D96C /* VLIW470 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = VLIW470; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2703EA3282027030016D96C /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		F2703EAA282027300016D96C /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
@@ -120,6 +142,17 @@
 		F2703EAE282029670016D96C /* resources */ = {
 			isa = PBXGroup;
 			children = (
+				F25C5EAC282BED040072C13A /* mem1.json */,
+				F25C5EAD282BED040072C13A /* mem2.json */,
+				F25C5EAE282BED040072C13A /* mem3.json */,
+				F25C5EB0282BED040072C13A /* mem4.json */,
+				F25C5EAF282BED040072C13A /* mem5.json */,
+				F25C5EAB282BED040072C13A /* mem6.json */,
+				F25C5EA3282BECF90072C13A /* test-2.json */,
+				F25C5EA5282BECF90072C13A /* test-3.json */,
+				F25C5EA4282BECF90072C13A /* test-4.json */,
+				F25C5EA1282BECF90072C13A /* test-5.json */,
+				F25C5EA2282BECF90072C13A /* test-6.json */,
 				F2703EB0282029730016D96C /* handout.json */,
 				F2703EB1282029730016D96C /* mem.json */,
 				F2703EB2282029730016D96C /* visualize.html */,
@@ -227,7 +260,18 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F25C5EB6282BED040072C13A /* mem4.json in Resources */,
+				F25C5EB5282BED040072C13A /* mem5.json in Resources */,
+				F25C5EB3282BED040072C13A /* mem2.json in Resources */,
 				F25C5E95282BD13D0072C13A /* test_2.json in Resources */,
+				F25C5EB2282BED040072C13A /* mem1.json in Resources */,
+				F25C5EB1282BED040072C13A /* mem6.json in Resources */,
+				F25C5EAA282BECF90072C13A /* test-3.json in Resources */,
+				F25C5EB4282BED040072C13A /* mem3.json in Resources */,
+				F25C5EA7282BECF90072C13A /* test-6.json in Resources */,
+				F25C5EA9282BECF90072C13A /* test-4.json in Resources */,
+				F25C5EA8282BECF90072C13A /* test-2.json in Resources */,
+				F25C5EA6282BECF90072C13A /* test-5.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
