@@ -210,7 +210,10 @@ struct RegisterAllocator {
                         if producingRegs.contains(destReg) {
                             // Means there exist an instruction depedent on this destReg
                             // Find this instruction newDestReg and add 1 for offset
-                            let newDestReg = at.renamedRegs.first(where: { $0.oldReg == destReg.regToNum })!.newReg + 1
+                            let iterOffset = 1
+                            let addrLoopInst = depTable.first(where: { $0.block == 1 && $0.instr.isProducingInstruction && $0.instr.destReg == destReg })!.addr
+                            let stageOffset = -stage(bundle: bundle(addr: addrLoopInst, block: 1))
+                            let newDestReg = at.renamedRegs.first(where: { $0.oldReg == destReg.regToNum })!.newReg + stageOffset + iterOffset
                             
                             // Update instruction
                             at = assignDestReg(newDestReg, in: at, toEntry: entry, atIndex: bIndex)
