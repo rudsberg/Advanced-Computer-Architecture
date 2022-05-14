@@ -175,9 +175,6 @@ class VLIW470UnitTests: XCTestCase {
 
         XCTAssertEqual(schedule.rows[3].Mult, nil)
         XCTAssertNotNil(schedule.rows[3].Branch)
-
-//        let loop = t[3].Branch.instr as! LoopInstruction
-//        XCTAssertEqual(loop.loopStart, 1)
     }
     
     func testAlloc_r() throws {
@@ -284,23 +281,23 @@ class VLIW470UnitTests: XCTestCase {
     func testIntegrationTest_2() throws {
         /*
          [
-             A "mov LC, 10",
-             B "mov x2, 0x1000",
-             C "mov x3, 1",
-             D "mov x4, 25",
-             E "mov x15, 65",
-             F "mulu x3, x3, x4",
-             G "sub x4, x15, x3",
+             0, A "mov LC, 10",
+             1, B "mov x2, 0x1000",
+             2, C "mov x3, 1",
+             3, D "mov x4, 25",
+             4, E "mov x15, 65",
+             5, F "mulu x3, x3, x4",
+             6, G "sub x4, x15, x3",
 
-             H "ld x5, 0(x2)",
-             I "mulu x6, x5, x4",
-             J "mulu x3, x3, x5",
-             K "st x6, 0(x2)",
-             L "addi x2, x2, 1",
-             M "loop 7",
+             7, H "ld x5, 0(x2)",
+             8, I "mulu x6, x5, x4",
+             9, J "mulu x3, x3, x5",
+             10 K "st x6, 0(x2)",
+             11 L "addi x2, x2, 1",
+             12 M "loop 7",
              
-             N "st x3, 0(x2)",
-             O "mov x6, x15"
+             13 N "st x3, 0(x2)",
+             14 O "mov x6, x15"
          ]
          
          Desired schedule:
@@ -329,6 +326,7 @@ class VLIW470UnitTests: XCTestCase {
         
         // sub
         verifyDepRow(row: d[6], ["E", "F"], [], [], [])
+        verifyDepRow(row: d[9], ["H"], ["F", "J"], [], [])
         
         verifyRow(s[0], toBe: ["A", "B", nil, nil, nil])
         verifyRow(s[1], toBe: ["C", "D", nil, nil, nil])

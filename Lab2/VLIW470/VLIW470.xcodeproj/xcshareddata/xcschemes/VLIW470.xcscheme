@@ -66,15 +66,15 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test-2.json"
+            argument = "test-3.json"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test-2-simple.json"
+            argument = "test-3-simple.json"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test-2-pip.json"
+            argument = "test-3-pip.json"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
