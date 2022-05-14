@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Algorithms
 
 struct Scheduler {
     let depTable: DependencyTable

@@ -8,11 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		F20807202822AF7000CBBC63 /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = F208071F2822AF7000CBBC63 /* Algorithms */; };
-		F20807222822BB2000CBBC63 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807212822BB2000CBBC63 /* Scheduler.swift */; };
-		F20807242822BBC500CBBC63 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807232822BBC500CBBC63 /* App.swift */; };
-		F20807262822BCC600CBBC63 /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
-		F23C230D282A40000053DBA8 /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
-		F23C230E282A40000053DBA8 /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
+		F2401516282FDD5D0033894C /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
+		F2401517282FDD5D0033894C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
+		F2401518282FDD5D0033894C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
+		F2401519282FDD5D0033894C /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807232822BBC500CBBC63 /* App.swift */; };
+		F240151A282FDD5D0033894C /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
+		F240151B282FDD5D0033894C /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807212822BB2000CBBC63 /* Scheduler.swift */; };
+		F240151C282FDD5D0033894C /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
+		F240151D282FDD5D0033894C /* RegisterAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */; };
+		F240151E282FE72A0033894C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
+		F240151F282FE72A0033894C /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
+		F2401520282FE72A0033894C /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807232822BBC500CBBC63 /* App.swift */; };
+		F2401521282FE72A0033894C /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
+		F2401522282FE72A0033894C /* RegisterAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */; };
+		F2401523282FE72A0033894C /* LoopPreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23C230C282A40000053DBA8 /* LoopPreparer.swift */; };
+		F2401524282FE72A0033894C /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807212822BB2000CBBC63 /* Scheduler.swift */; };
 		F25C5E95282BD13D0072C13A /* test_2.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5E94282BD13D0072C13A /* test_2.json */; };
 		F25C5EA6282BECF90072C13A /* test-5.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EA1282BECF90072C13A /* test-5.json */; };
 		F25C5EA7282BECF90072C13A /* test-6.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EA2282BECF90072C13A /* test-6.json */; };
@@ -26,16 +36,6 @@
 		F25C5EB5282BED040072C13A /* mem5.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EAF282BED040072C13A /* mem5.json */; };
 		F25C5EB6282BED040072C13A /* mem4.json in Resources */ = {isa = PBXBuildFile; fileRef = F25C5EB0282BED040072C13A /* mem4.json */; };
 		F2703EA4282027030016D96C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
-		F2703EAB282027300016D96C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
-		F2703EAD282028120016D96C /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
-		F294D8E22823AC3800916BFD /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAC282028120016D96C /* Model.swift */; };
-		F294D8E32823AC8F00916BFD /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EAA282027300016D96C /* Helpers.swift */; };
-		F294D8E42823AC8F00916BFD /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807232822BBC500CBBC63 /* App.swift */; };
-		F294D8E52823AC8F00916BFD /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2703EA3282027030016D96C /* main.swift */; };
-		F294D8E62823AC8F00916BFD /* DependencyBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807252822BCC600CBBC63 /* DependencyBuilder.swift */; };
-		F294D8E92823AE1400916BFD /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20807212822BB2000CBBC63 /* Scheduler.swift */; };
-		F294D8ED2823D4DC00916BFD /* RegisterAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */; };
-		F294D8EE2823D4DC00916BFD /* RegisterAllocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F294D8EC2823D4DC00916BFD /* RegisterAllocator.swift */; };
 		F2C207F02823A814000E5876 /* VLIW470UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C207EF2823A814000E5876 /* VLIW470UnitTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -282,14 +282,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F23C230D282A40000053DBA8 /* LoopPreparer.swift in Sources */,
-				F2703EAD282028120016D96C /* Model.swift in Sources */,
-				F20807222822BB2000CBBC63 /* Scheduler.swift in Sources */,
-				F20807262822BCC600CBBC63 /* DependencyBuilder.swift in Sources */,
+				F240151F282FE72A0033894C /* Model.swift in Sources */,
+				F2401524282FE72A0033894C /* Scheduler.swift in Sources */,
+				F2401520282FE72A0033894C /* App.swift in Sources */,
 				F2703EA4282027030016D96C /* main.swift in Sources */,
-				F20807242822BBC500CBBC63 /* App.swift in Sources */,
-				F294D8ED2823D4DC00916BFD /* RegisterAllocator.swift in Sources */,
-				F2703EAB282027300016D96C /* Helpers.swift in Sources */,
+				F2401521282FE72A0033894C /* DependencyBuilder.swift in Sources */,
+				F2401522282FE72A0033894C /* RegisterAllocator.swift in Sources */,
+				F240151E282FE72A0033894C /* Helpers.swift in Sources */,
+				F2401523282FE72A0033894C /* LoopPreparer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,15 +297,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F294D8EE2823D4DC00916BFD /* RegisterAllocator.swift in Sources */,
+				F240151A282FDD5D0033894C /* Model.swift in Sources */,
+				F240151B282FDD5D0033894C /* Scheduler.swift in Sources */,
 				F2C207F02823A814000E5876 /* VLIW470UnitTests.swift in Sources */,
-				F294D8E92823AE1400916BFD /* Scheduler.swift in Sources */,
-				F294D8E52823AC8F00916BFD /* main.swift in Sources */,
-				F294D8E62823AC8F00916BFD /* DependencyBuilder.swift in Sources */,
-				F23C230E282A40000053DBA8 /* LoopPreparer.swift in Sources */,
-				F294D8E42823AC8F00916BFD /* App.swift in Sources */,
-				F294D8E32823AC8F00916BFD /* Helpers.swift in Sources */,
-				F294D8E22823AC3800916BFD /* Model.swift in Sources */,
+				F2401518282FDD5D0033894C /* main.swift in Sources */,
+				F240151C282FDD5D0033894C /* LoopPreparer.swift in Sources */,
+				F2401519282FDD5D0033894C /* App.swift in Sources */,
+				F2401516282FDD5D0033894C /* DependencyBuilder.swift in Sources */,
+				F240151D282FDD5D0033894C /* RegisterAllocator.swift in Sources */,
+				F2401517282FDD5D0033894C /* Helpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

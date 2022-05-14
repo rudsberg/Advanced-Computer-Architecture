@@ -153,6 +153,12 @@ extension Instruction {
     }
 }
 
+extension DefaultStringInterpolation {
+    mutating func appendInterpolation<T>(_ optional: T?) {
+        appendInterpolation(String(describing: optional))
+    }
+}
+
 extension Optional where Wrapped == Instruction {
     var string: String {
         self == nil ? "nop" : self!.addPredicate(to: self!.print)

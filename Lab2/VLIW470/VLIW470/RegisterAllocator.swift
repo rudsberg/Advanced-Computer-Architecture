@@ -150,7 +150,6 @@ struct RegisterAllocator {
     
     private func linkOperands_r(_ allocTable: AllocatedTable, nextFreshReg: Int) -> AllocatedTable {
         var at = allocTable
-        var regCounter = nextFreshReg
         
         allocTable.table.enumerated().forEach { (bIndex, b) in
             [b.ALU0, b.ALU1, b.Mult, b.Mem, b.Branch].forEach { entry in
@@ -254,17 +253,6 @@ struct RegisterAllocator {
                             at = assignReadReg(renamed.newReg, oldReadReg: renamed.oldReg, in: at, toEntry: entry, atIndex: bIndex)
                         }
                     }
-                    
-                    // If an instruction has a local dependency within BB0 or BB2, register allocation works in the same way as register allocation without loop.pip
-                    // (unless the destination register has already been allocated in Phase 1).
-                    // TODO: 
-//                    if at.table[bIndex].block == 0 || at.table[bIndex].block == 2, !deps.localDep.isEmpty {
-//                        let localDep = deps.localDep.map { Int($0)! }.first!
-//                        let dependentReg = depTable.first(where: { $0.addr == localDep })!.destReg!
-//                        if at.renamedRegs.contains(where: { $0.oldReg == localDep }) {
-//
-//                        }
-//                    }
                 }
             }
         }
