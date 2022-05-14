@@ -9,6 +9,34 @@ import XCTest
 
 class VLIW470UnitTests: XCTestCase {
     private let folderPath = "/Users/joelrudsberg/Desktop/EPFL/adv-comp-arch/Advanced-Computer-Architecture/Lab2/VLIW470/VLIW470/resources"
+    
+    func testDependencyTable() throws {
+        let program = try createProgram(fromFile: "handout.json")
+        let d = DependencyBuilder().createTable(fromProgram: program)
+        
+        verifyDepRow(row: d[0], [], [], [], [])
+        verifyDepRow(row: d[1], [], [], [], [])
+        verifyDepRow(row: d[2], [], [], [], [])
+        verifyDepRow(row: d[3], [], [], [], [])
+        verifyDepRow(row: d[4], [], ["B", "I"], [], [])
+        verifyDepRow(row: d[5], ["E"], [], ["D"], [])
+        verifyDepRow(row: d[6], ["E"], ["C", "G"], [], [])
+        verifyDepRow(row: d[7], ["F"], ["B", "I"], [], [])
+        verifyDepRow(row: d[8], [], ["B", "I"], [], [])
+        verifyDepRow(row: d[9], [], [], [], [])
+        verifyDepRow(row: d[10], [], [], [], ["G", "I"])
+    }
+    
+    func verifyDepRow(row: DependencyTableEntry, _ locals: [String], _ interloop: [String], _ loopInvariant: [String], _ postLoop: [String]) {
+        func sorted(_ s: [String]) -> [String] {
+            s.sorted(by: <)
+        }
+        
+        XCTAssertEqual(sorted(row.localDep.map { $0.toChar }), sorted(locals))
+        XCTAssertEqual(sorted(row.interloopDep.map { $0.toChar }), sorted(interloop))
+        XCTAssertEqual(sorted(row.loopInvariantDep.map { $0.toChar }), sorted(loopInvariant))
+        XCTAssertEqual(sorted(row.postLoopDep.map { $0.toChar }), sorted(postLoop))
+    }
 
     func testScheduler1() throws {
         /*
@@ -296,7 +324,11 @@ class VLIW470UnitTests: XCTestCase {
         let app = App(config: config)
         let res = try app.run()
         
+        let d = res.depTable
         let s = res.simpleSchedule.rows
+        
+        // sub
+        verifyDepRow(row: d[6], ["E", "F"], [], [], [])
         
         verifyRow(s[0], toBe: ["A", "B", nil, nil, nil])
         verifyRow(s[1], toBe: ["C", "D", nil, nil, nil])
@@ -304,11 +336,14 @@ class VLIW470UnitTests: XCTestCase {
         verifyRow(s[3], toBe: nil)
         verifyRow(s[4], toBe: nil)
         verifyRow(s[5], toBe: ["G", nil, nil, nil, nil])
-
+        
+        
         
         let outputSimple = try FileIOController.shared.read([[String]].self, documentName: "test_2-simple.json")
         let outputPip = try FileIOController.shared.read([[String]].self, documentName: "test_2-pip.json")
 
+        // Should be equal
+        
     }
     
     private func verifyRow(_ row: ScheduleRow, toBe adresses: [String?]?) {

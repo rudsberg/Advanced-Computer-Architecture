@@ -58,7 +58,7 @@ struct DependencyBuilder {
                 destReg: i.destReg,
                 // Search dep those before curr instr in same block
                 localDep: findDependencies(in: Array(bb1.prefix(i.addr - loopStart)), for: i),
-                interloopDep: findDependencies(in: consideredInterLoopInstructions, for: i),
+                interloopDep: findDependencies(in: consideredInterLoopInstructions, for: i, prune: false),
                 loopInvariantDep: findDependencies(in: consideredLoopInvInstructions, for: i),
                 postLoopDep: []
             )
@@ -87,19 +87,37 @@ struct DependencyBuilder {
     }
     
     /// Finds dependencies
-    private func findDependencies(in instructions: Program, for instruction: Instruction) -> [String] {
+    /// Prune determines if we apply: if dependent on more than one instruction for the same register, only take the last producing instruction in program order
+    private func findDependencies(in instructions: Program, for instruction: Instruction, prune: Bool = true) -> [String] {
         guard let readRegs = instruction.readRegs else {
             return []
         }
         
-        var RAW = instructions.filter {
+        // Addr -> Produced Register
+        var RAW: [(Int, String)] = instructions.filter {
             guard let destReg = $0.destReg else {
                 return false
             }
             return readRegs.contains(destReg)
-        }.map { $0.addr }
-        RAW = RAW.uniqued()
-        return RAW.map { "\($0)" }
+        }.map { ($0.addr, $0.destReg!) }
+        
+        if prune {
+            // No duplicate for same producing reg, get it by going in reverse order and only add if not present
+            var _RAW = [(Int, String)]()
+            RAW.sorted { x1, x2 in
+                x1.0 > x2.0
+            }.forEach { dep in
+                if !_RAW.contains(where: { x in x.1 == dep.1 }) {
+                    _RAW.append(dep)
+                }
+            }
+            RAW = _RAW
+        }
+        
+        var RAW_Addr = RAW.map { $0.0 }.sorted(by: <)
+        RAW_Addr = RAW_Addr.uniqued()
+        
+        return RAW_Addr.map { "\($0)" }
     }
 
 }

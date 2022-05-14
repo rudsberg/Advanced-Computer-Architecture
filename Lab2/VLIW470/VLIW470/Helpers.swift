@@ -32,6 +32,17 @@ extension Int {
 }
 
 extension String {
+    var toChar: String {
+        let val = Int(self)!
+        if val >= 26 {
+            return "\(val)"
+        } else {
+            return String(alphabet[val])
+        }
+    }
+}
+
+extension String {
     /// If hex converts to base 10
     var toNum: String {
         let str = self.map { String($0) }

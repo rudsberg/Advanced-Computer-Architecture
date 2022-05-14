@@ -14,6 +14,7 @@ struct Config {
 }
 
 struct Result {
+    let depTable: DependencyTable
     let simpleSchedule: Schedule
     let pipSchedule: Schedule
 }
@@ -46,6 +47,6 @@ struct App {
         try logger.log(allocTable: allocatedTableSimple, documentName: config.outputFileSimple)
         try logger.log(allocTable: allocatedTablePip, documentName: config.outputFilePip)
         
-        return .init(simpleSchedule: scheduleSimple, pipSchedule: schedulePip)
+        return .init(depTable: depTable, simpleSchedule: scheduleSimple, pipSchedule: schedulePip)
     }
 }
